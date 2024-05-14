@@ -224,6 +224,42 @@ fn taylors_series_horner_rule(x: u16, n: u16, sum: &Mutex<f64>, mut depth: Optio
     return out;
 }
 
+fn fibonacci(n: u16, mut depth: Option<usize>) -> u16 {
+    depth = match depth {
+        Some(val) => {
+            println!("{:indent$}└─ fibonacci({})", "", n, indent = val);
+            Some(val + 1)
+        }
+        None => None,
+    };
+
+    if n <= 1 {
+        return n;
+    }
+
+    let out_1: u16 = fibonacci(n - 1, depth);
+    let out_2: u16 = fibonacci(n - 2, depth);
+    let out: u16 = out_1 + out_2;
+
+    match depth {
+        Some(_) => {
+            println!(
+                "{:indent$}└─ fibonacci({})={} + fibonacci({})={} = {}",
+                "",
+                n - 2,
+                out_2,
+                n - 1,
+                out_1,
+                out,
+                indent = depth.unwrap()
+            );
+        }
+        None => (),
+    };
+
+    return out;
+}
+
 fn main() {
     let visualize: bool = true;
     let depth: Option<usize>;
@@ -302,6 +338,18 @@ fn main() {
     println!(
         "Taylor's Series using Horner's Rule where x={} and n={} is {}",
         ts_x, ts_n, ts_horner
+    );
+    println!("----");
+
+    let fib_n: u16 = 6;
+    println!(
+        "Calculating Fibonacci Series for n using Recursion where n={}!",
+        fib_n
+    );
+    let fib: u16 = fibonacci(fib_n, depth);
+    println!(
+        "Fibonacci Series of n where n={} is {}",
+        fib_n, fib
     );
     println!("----");
 }
