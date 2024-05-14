@@ -1,15 +1,10 @@
 use lazy_static::lazy_static;
 use std::sync::Mutex;
 
-fn tree_recursion(n: u16, mut depth: Option<usize>) {
+fn tree_recursion(n: u16, mut depth: usize) {
     if n > 0 {
-        depth = match depth {
-            Some(val) => {
-                println!("{:indent$}└─ n={}", "", n, indent = val);
-                Some(val + 1)
-            }
-            None => None,
-        };
+        depth = depth + 1;
+        println!("{:indent$}└─ n={}", "", n, indent = depth);
         tree_recursion(n - 1, depth);
         tree_recursion(n - 1, depth);
     }
@@ -239,10 +234,15 @@ fn main() {
         depth = None
     }
 
-    let tree_n: u16 = 4;
-    println!("Visualizing Tree Recursion where n={}!", tree_n);
-    tree_recursion(tree_n, depth);
-    println!("----");
+    match depth {
+        Some(_) => {
+            let tree_n: u16 = 4;
+            println!("Visualizing Tree Recursion where n={}!", tree_n);
+            tree_recursion(tree_n, depth.unwrap());
+            println!("----");
+        },
+        None => ()
+    }
 
     let sum_n: u16 = 5;
     println!(
