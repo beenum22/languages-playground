@@ -1,6 +1,3 @@
-use lazy_static::lazy_static;
-use std::sync::Mutex;
-
 fn tree_recursion(n: u16, mut depth: usize) {
     if n > 0 {
         depth = depth + 1;
@@ -113,8 +110,8 @@ fn power(m: u16, n: u16, mut depth: Option<usize>) -> u16 {
 fn taylors_series(
     x: u16,
     n: u16,
-    power: &Mutex<f64>,
-    factorial: &Mutex<f64>,
+    p: &mut f64,
+    f: &mut f64,
     mut depth: Option<usize>,
 ) -> f64 {
     let r_out: f64;
@@ -138,11 +135,9 @@ fn taylors_series(
         return 1.0;
     }
 
-    r_out = taylors_series(x, n - 1, power, factorial, depth);
-    let mut p = power.lock().unwrap();
-    let mut f = factorial.lock().unwrap();
-    *p = *p * x as f64;
-    *f = *f * n as f64;
+    r_out = taylors_series(x, n - 1, p, f, depth);
+    *p *= x as f64;
+    *f *= n as f64;
     out = r_out + *p / *f;
 
     match depth {
@@ -165,7 +160,7 @@ fn taylors_series(
     return out;
 }
 
-fn taylors_series_horner_rule(x: u16, n: u16, sum: &Mutex<f64>, mut depth: Option<usize>) -> f64 {
+fn taylors_series_horner_rule(x: u16, n: u16, s: &mut f64, mut depth: Option<usize>) -> f64 {
     let out: f64;
 
     depth = match depth {
@@ -183,7 +178,6 @@ fn taylors_series_horner_rule(x: u16, n: u16, sum: &Mutex<f64>, mut depth: Optio
     };
 
     {
-        let mut s = sum.lock().unwrap();
         if n == 0 {
             return *s;
         }
@@ -205,7 +199,7 @@ fn taylors_series_horner_rule(x: u16, n: u16, sum: &Mutex<f64>, mut depth: Optio
         *s = 1.0 + (x as f64 * *s / n as f64);
     }
 
-    out = taylors_series_horner_rule(x, n - 1, sum, depth);
+    out = taylors_series_horner_rule(x, n - 1, s, depth);
 
     match depth {
         Some(_) => {
@@ -359,28 +353,22 @@ fn main() {
 
     let ts_x: u16 = 1;
     let ts_n: u16 = 3;
-    // Additional pieces to implement C++ static variables like behaviour in Rust for Taylor's Series
-    lazy_static! {
-        static ref TS_POWER: Mutex<f64> = Mutex::new(1.0);
-        static ref TS_FACTORIAL: Mutex<f64> = Mutex::new(1.0);
-    }
+    let mut ts_p: f64 = 1.0;
+    let mut ts_f: f64 = 1.0;
     println!(
         "Calculating Taylor's Series using Recursion where x={} and n={}!",
         ts_x, ts_n
     );
-    let ts: f64 = taylors_series(ts_x, ts_n, &TS_POWER, &TS_FACTORIAL, depth);
+    let ts: f64 = taylors_series(ts_x, ts_n, &mut ts_p, &mut ts_f, depth);
     println!("Taylor's Series where x={} and n={} is {}", ts_x, ts_n, ts);
     println!("----");
 
-    // Additional pieces to implement C++ static variables like behaviour in Rust for Taylor's Series
-    lazy_static! {
-        static ref TS_HORNER_SUM: Mutex<f64> = Mutex::new(1.0);
-    }
+    let mut ts_horner_sum: f64 = 1.0;
     println!(
         "Calculating Taylor's Series using Horner's Rule where x={} and n={}!",
         ts_x, ts_n
     );
-    let ts_horner: f64 = taylors_series_horner_rule(ts_x, ts_n, &TS_HORNER_SUM, depth);
+    let ts_horner: f64 = taylors_series_horner_rule(ts_x, ts_n, &mut ts_horner_sum, depth);
     println!(
         "Taylor's Series using Horner's Rule where x={} and n={} is {}",
         ts_x, ts_n, ts_horner
