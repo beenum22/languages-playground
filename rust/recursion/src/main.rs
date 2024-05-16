@@ -224,7 +224,7 @@ fn taylors_series_horner_rule(x: u16, n: u16, sum: &Mutex<f64>, mut depth: Optio
     return out;
 }
 
-fn fibonacci(n: u16, mut depth: Option<usize>) -> u16 {
+fn fibonacci(n: i16, mut depth: Option<usize>) -> i16 {
     depth = match depth {
         Some(val) => {
             println!("{:indent$}└─ fibonacci({})", "", n, indent = val);
@@ -237,9 +237,9 @@ fn fibonacci(n: u16, mut depth: Option<usize>) -> u16 {
         return n;
     }
 
-    let out_1: u16 = fibonacci(n - 1, depth);
-    let out_2: u16 = fibonacci(n - 2, depth);
-    let out: u16 = out_1 + out_2;
+    let out_1: i16 = fibonacci(n - 1, depth);
+    let out_2: i16 = fibonacci(n - 2, depth);
+    let out: i16 = out_1 + out_2;
 
     match depth {
         Some(_) => {
@@ -250,6 +250,52 @@ fn fibonacci(n: u16, mut depth: Option<usize>) -> u16 {
                 out_2,
                 n - 1,
                 out_1,
+                out,
+                indent = depth.unwrap()
+            );
+        }
+        None => (),
+    };
+
+    return out;
+}
+
+fn fibonacci_light(n: i16, cache: &mut Vec<i16>, mut depth: Option<usize>) -> i16 {
+    let out: i16;
+
+    depth = match depth {
+        Some(val) => {
+            println!("{:indent$}└─ fibonacci_light({})", "", n, indent = val);
+            Some(val + 1)
+        }
+        None => None,
+    };
+
+    if n <= 1 {
+        cache[n as usize] = n;
+        return n;
+    } else {
+        if cache[n as usize - 2] == -1 {
+            cache[n as usize - 2] = fibonacci_light(n - 2, cache, depth);
+        } else if cache[n as usize - 1] == -1 {
+            cache[n as usize - 1] = fibonacci_light(n - 1, cache, depth);
+        }
+        out = cache[n as usize - 2] + cache[n as usize - 1];
+    }
+
+    // let out_1: u16 = crate::fibonacci(n - 1, depth);
+    // let out_2: u16 = crate::fibonacci(n - 2, depth);
+    // let out: u16 = out_1 + out_2;
+
+    match depth {
+        Some(_) => {
+            println!(
+                "{:indent$}└─ fibonacci_light({})={} + fibonacci({})={} = {}",
+                "",
+                n - 2,
+                cache[n as usize - 2],
+                n - 1,
+                cache[n as usize - 1],
                 out,
                 indent = depth.unwrap()
             );
@@ -341,15 +387,36 @@ fn main() {
     );
     println!("----");
 
-    let fib_n: u16 = 6;
+    const FIB_N: i16 = 6;
     println!(
         "Calculating Fibonacci Series for n using Recursion where n={}!",
-        fib_n
+        FIB_N
     );
-    let fib: u16 = fibonacci(fib_n, depth);
+    let fib: i16 = fibonacci(FIB_N, depth);
     println!(
         "Fibonacci Series of n where n={} is {}",
-        fib_n, fib
+        FIB_N, fib
     );
+    println!("----");
+
+    // Additional pieces to implement C++ static variables like behaviour in Rust for Taylor's Series
+    // lazy_static! {
+    //     // static ref FIB_ARRAY: Mutex<[i16; FIB_N as usize]> = Mutex::new([-1; FIB_N as usize]);
+    //     static ref FIB_ARRAY: Vec<i16> = {
+    //     let size: usize = FIB_N as usize;
+    //     let mut vec = Vec::with_capacity(size);
+    //     vec.resize(size, -1);
+    //     vec
+    // };
+    // }
+    // println!(
+    //     "Calculating Fibonacci Series for n using Recursion without redundant steps where n={}!",
+    //     FIB_N
+    // );
+    // let fib_light: i16 = fibonacci_light(FIB_N, &FIB_ARRAY, depth);
+    // println!(
+    //     "Fibonacci Series of n where n={} is {}",
+    //     FIB_N, fib_light
+    // );
     println!("----");
 }
