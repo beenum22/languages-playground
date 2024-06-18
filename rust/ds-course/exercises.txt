@@ -1,0 +1,11 @@
+Custom data types to add:
+    * Array (ALMOST DONE)
+        * Implement comparisons
+    * String (DONE)
+    * char
+
+Exercises to perform using custom arrays:
+    * Counting vowels in a string
+    * Counting consonants in a string
+    * Password validation in a string
+    * Finding duplicated characters in a string using bitwise operations
