@@ -22,6 +22,7 @@ mod structs {
     pub mod matrices;
     pub mod arrays;
     pub mod strings;
+    pub mod polynomials;
 }
 
 

@@ -5,6 +5,7 @@ use std::time::Instant;
 
 use crate::structs::matrices::{Matrix, MatrixOperations, DiagonalMatrix, LowerTriangularMatrix, UpperTraingularMatrix, TridiagonalMatrix, ToeplitzMatrix};
 use crate::structs::arrays::{HeapArray};
+use crate::structs::polynomials::Polynomial;
 use crate::structs::strings::{HeapString};
 
 // fn adt_demo_with_arithmatic<T: >(size: usize) {
