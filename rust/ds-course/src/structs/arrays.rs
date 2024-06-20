@@ -14,10 +14,23 @@ pub struct ArrayIterator<'a, T> {
     index: usize,
 }
 
+impl<'a, T> Iterator for ArrayIterator<'a, T> {
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.array.get_len() {
+            let value = unsafe { &*self.array.ptr.add(self.index) };
+            self.index += 1;
+            Some(value)
+        } else {
+            None
+        }
+    }
+}
+
 pub struct HeapArray<T> {
     ptr: *mut T,
     size: usize,
-    pub(crate) length: usize,
+    length: usize,
 }
 
 impl<T> HeapArray<T> {
@@ -30,7 +43,7 @@ impl<T> HeapArray<T> {
         }
     }
 
-    fn iter(&self) -> ArrayIterator<T>{
+    pub fn iter(&self) -> ArrayIterator<T>{
         ArrayIterator {
             array: self,
             index: 0,
@@ -101,7 +114,7 @@ impl<T> HeapArray<T> {
         Ok(())
     }
 
-    // TODO: Revist this method. It might be problematic
+    // TODO: Revisit this method. It might be problematic
     pub(crate) fn as_bytes(&self) -> &[u8] {
         unsafe {
             slice::from_raw_parts(self.ptr as *const u8, self.length)
@@ -671,6 +684,12 @@ impl<T> HeapArray<T> {
     }
 }
 
+impl<T> Default for HeapArray<T> {
+    fn default() -> Self {
+        HeapArray::new()
+    }
+}
+
 impl<T: Clone > Clone for HeapArray<T> {
     fn clone(&self) -> Self {
         let mut clone = Self::with_capacity(self.size);
@@ -812,20 +831,7 @@ impl<T: PartialOrd> PartialOrd for HeapArray<T> {
     }
 }
 
-impl<'a, T: Default> Iterator for ArrayIterator<'a, T> {
-    type Item = &'a T;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index < self.array.get_len() {
-            let value = unsafe { &*self.array.ptr.add(self.index) };
-            self.index += 1;
-            Some(value)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a, T: Default> IntoIterator for &'a HeapArray<T> {
+impl<'a, T> IntoIterator for &'a HeapArray<T> {
     type Item = &'a T;
     type IntoIter = ArrayIterator<'a, T>;
 
@@ -904,20 +910,80 @@ impl<T> Drop for HeapArray<T> {
 
 #[cfg(test)]
 mod heap_array {
+    use crate::structs::strings::HeapString;
     use super::*;
     use paste::paste;
     use rand::{Rng, thread_rng};
 
     macro_rules! define_test_new {
+        ($($struct:ident<$type:ty>),*) => {
+            $(
+                paste::item! {
+                    #[test]
+                    fn [<test_new_ $struct:snake _$type >]() {
+                        let array: HeapArray<$struct<$type>> = HeapArray::new();
+                        assert!(array.ptr.is_null(), "Array pointer must be null!");
+                        assert_eq!(array.size, 0, "Array size must be zero!");
+                        assert_eq!(array.length, 0, "Array length must be zero!");
+                    }
+                }
+            )*
+        };
         ($($type:ty),*) => {
             $(
                 paste! {
                     #[test]
-                    fn [<test_new_$type>]() {
+                    fn [<test_new_$type:snake >]() {
+                    // fn [<test_new_$type:snake>]() {
                         let array: HeapArray<$type> = HeapArray::new();
-                        assert!(array.ptr.is_null(), "Verifying no array memory is assigned yet.");
-                        assert_eq!(array.size, 0, "Verifying array size");
-                        assert_eq!(array.length, 0, "Verifying array length");
+                        assert!(array.ptr.is_null(), "Array pointer must be null!");
+                        assert_eq!(array.size, 0, "Array size must be zero!");
+                        assert_eq!(array.length, 0, "Array length must be zero!");
+                    }
+                }
+            )*
+        };
+    }
+
+    macro_rules! define_test_iterator {
+        ($($struct:ident<$type:ty>),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_iterator_ $struct:snake _$type:snake>]() {
+                        let val_1: $struct<$type> = $struct::<$type>::default();
+                        let val_2: $struct<$type> = $struct::<$type>::default();
+                        let mut array: HeapArray<$struct<$type>> = HeapArray::with_capacity(2);
+                        array.push(val_1.clone());
+                        array.push(val_2.clone());
+
+                        let mut iterator = array.iter();
+                        assert_eq!(iterator.next().unwrap(), &val_1, "The iterator did not return the expected sequence.");
+                        assert_eq!(iterator.next().unwrap(), &val_2, "The iterator did not return the expected sequence.");
+                        assert_eq!(iterator.next(), None, "The iterator did not return the expected sequence.");
+
+                        let mut into_iterator = array.into_iter();
+                        assert_eq!(into_iterator.next().unwrap(), &val_1, "The into iterator impl. did not return the expected sequence.");
+                        assert_eq!(into_iterator.next().unwrap(), &val_2, "The into iterator impl. did not return the expected sequence.");
+                        assert_eq!(into_iterator.next(), None, "The into iterator impl. did not return the expected sequence.");
+                    }
+                }
+            )*
+        };
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_iterator_$type:snake>]() {
+                        let val_1: $type = $type::default();
+                        let val_2: $type = $type::default();
+                        let mut array: HeapArray<$type> = HeapArray::with_capacity(2);
+                        array.push(val_1.clone());
+                        array.push(val_2.clone());
+                        let mut iterator = array.iter();
+                        assert_eq!(iterator.next().unwrap(), &val_1, "The iterator did not return the expected sequence.");
+                        assert_eq!(iterator.next().unwrap(), &val_2, "The iterator did not return the expected sequence.");
+                        assert_eq!(iterator.next(), None, "The iterator did not return the expected sequence.");
                     }
                 }
             )*
@@ -925,13 +991,26 @@ mod heap_array {
     }
 
     macro_rules! define_test_with_capacity {
+        ($($struct:ident<$type:ty>),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_with_capacity_ $struct:snake _$type>]() {
+                        let array: HeapArray<$struct<$type>> = HeapArray::with_capacity(5);
+                        assert!(!array.ptr.is_null(), "Array pointer must be null!");
+                        assert_eq!(array.size, 5);
+                        assert_eq!(array.length, 0);
+                    }
+                }
+            )*
+        };
         ($($type:ty),*) => {
             $(
                 paste! {
                     #[test]
-                    fn [<test_new_$type>]() {
+                    fn [<test_with_capacity_$type:snake>]() {
                         let array: HeapArray<$type> = HeapArray::with_capacity(5);
-                        assert!(!array.ptr.is_null());
+                        assert!(!array.ptr.is_null(), "Array pointer must be null!");
                         assert_eq!(array.size, 5);
                         assert_eq!(array.length, 0);
                     }
@@ -941,11 +1020,26 @@ mod heap_array {
     }
 
     macro_rules! define_test_values {
+        ($($struct:ident<$type:ty>),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_values_ $struct:snake _$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let values: [$struct<$type>; 2] = [rng.gen::<$struct<$type>>(), rng.gen::<$struct<$type>>()];
+                        let array: HeapArray<$struct<$type>> = HeapArray::values(&values);
+                        assert!(!array.ptr.is_null());
+                        assert_eq!(array.size, 2);
+                        assert_eq!(array.length, 2);
+                    }
+                }
+            )*
+        };
         ($($type:ty),*) => {
             $(
                 paste! {
                     #[test]
-                    fn [<test_values_$type>]() {
+                    fn [<test_values_$type:snake>]() {
                         let mut rng = thread_rng();
                         let values: [$type; 2] = [rng.gen::<$type>(), rng.gen::<$type>()];
                         let array: HeapArray<$type> = HeapArray::values(&values);
@@ -963,7 +1057,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_resize_$type>]() {
+                    fn [<test_resize_$type:snake>]() {
                         let mut rng = thread_rng();
                         let values: [$type; 2] = [rng.gen::<$type>(), rng.gen::<$type>()];
                         let mut array: HeapArray<$type> = HeapArray::values(&values);
@@ -986,7 +1080,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_push_$type>]() {
+                    fn [<test_push_$type:snake>]() {
                         let mut rng = thread_rng();
                         let rnd_val = rng.gen::<$type>();
                         let mut array: HeapArray<$type> = HeapArray::with_capacity(1);
@@ -1004,7 +1098,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_get_$type>]() {
+                    fn [<test_get_$type:snake>]() {
                         let mut rng = thread_rng();
                         let rnd_val = rng.gen::<$type>();
                         let array: HeapArray<$type> = HeapArray::values(&[rnd_val]);
@@ -1021,7 +1115,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_delete_$type>]() {
+                    fn [<test_delete_$type:snake>]() {
                         let mut rng = thread_rng();
                         let rnd_val_1 = rng.gen::<$type>();
                         let rnd_val_2 = rng.gen::<$type>();
@@ -1041,12 +1135,11 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_fill_$type>]() {
+                    fn [<test_fill_$type:snake>]() {
                         let mut rng = thread_rng();
                         let rnd_val_1 = rng.gen::<$type>();
                         let mut array: HeapArray<$type> = HeapArray::with_capacity(5);
                         array.fill(rnd_val_1);
-                        println!("YO");
                         assert_eq!(array.length, array.size, "Verifying the array length after filler elements");
                         assert_eq!(array[2], rnd_val_1, "Verifying any array filler element");
                     }
@@ -1060,7 +1153,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_sorted_difference_$type>]() {
+                    fn [<test_sorted_difference_$type:snake>]() {
                         let mut rng = thread_rng();
                         let array_1_val_1: $type = rng.gen::<$type>();
                         let array_1_val_2: $type = rng.gen::<$type>();
@@ -1083,7 +1176,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_sorted_intersection_$type>]() {
+                    fn [<test_sorted_intersection_$type:snake>]() {
                         let mut rng = thread_rng();
                         let array_1_val_1: $type = rng.gen::<$type>();
                         let array_1_val_2: $type = rng.gen::<$type>();
@@ -1106,7 +1199,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_sorted_union_$type>]() {
+                    fn [<test_sorted_union_$type:snake>]() {
                         let mut rng = thread_rng();
                         let array_1_val_1: $type = rng.gen::<$type>();
                         let array_1_val_2: $type = rng.gen::<$type>();
@@ -1130,7 +1223,7 @@ mod heap_array {
             $(
                 paste! {
                     #[test]
-                    fn [<test_sorted_merge_$type>]() {
+                    fn [<test_sorted_merge_$type:snake>]() {
                         let mut rng = thread_rng();
                         let array_1_val_1: $type = rng.gen::<$type>();
                         let array_1_val_2: $type = rng.gen::<$type>();
@@ -1149,8 +1242,51 @@ mod heap_array {
         };
     }
 
-    define_test_new!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    #[test]
+    fn test_iterator_structs() {
+        #[derive(Debug)]
+        #[derive(Default)]
+        struct TestElement<T> {
+            val: T
+        }
+
+        struct TestCollection<T> {
+            items: HeapArray<TestElement<T>>
+        }
+        let mut items: HeapArray<TestElement<u8>> = HeapArray::with_capacity(2);
+        items.push(TestElement{val: 5});
+        items.push(TestElement{val: 10});
+        let mut collection: TestCollection<u8> = TestCollection {
+            items
+        };
+
+        // let mut iterator = collection.items.iter();
+        for i in collection.items.iter() {
+            println!("{:?}", i);
+        }
+        // assert_eq!(iterator.next().unwrap(), &val_1, "The iterator did not return the expected sequence.");
+        // assert_eq!(iterator.next().unwrap(), &val_2, "The iterator did not return the expected sequence.");
+        // assert_eq!(iterator.next(), None, "The iterator did not return the expected sequence.");
+        //
+        // let mut into_iterator = array.into_iter();
+        // assert_eq!(into_iterator.next().unwrap(), &val_1, "The into iterator impl. did not return the expected sequence.");
+        // assert_eq!(into_iterator.next().unwrap(), &val_2, "The into iterator impl. did not return the expected sequence.");
+        // assert_eq!(into_iterator.next(), None, "The into iterator impl. did not return the expected sequence.");
+    }
+
+    define_test_iterator!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_iterator!(HeapArray<i8>);
+    // define_test_iterator!(HeapArray<i8>, SparseMatrixElement<i8>);
+
+    define_test_new!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_new!(HeapArray<i8>);
+
+    define_test_with_capacity!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_with_capacity!(HeapArray<i8>);
+
     define_test_values!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    // define_test_values!(SparseMatrixElement<i8>);
+
     define_test_resize!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_push!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_get!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
