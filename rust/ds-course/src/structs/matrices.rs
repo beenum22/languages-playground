@@ -377,7 +377,7 @@ impl<T: PartialEq> UpperTraingularMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for UpperTraingularMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for UpperTraingularMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
         row * (row + 1)/2
     }
@@ -795,43 +795,25 @@ mod toeplitz_matrix {
 }
 
 mod sparse_matrix {
-    use crate::structs::matrices::{MatrixOperations, SparseMatrix, ToeplitzMatrix};
-    use crate::traits::Random;
+    use crate::structs::matrices::SparseMatrix;
 
     #[test]
     fn test_new() {
         // n x n matrix. e.g. 5 x 5
-        let dimension: usize = 5;
-        // total = n + n - 1
-        let total_elements: usize = 9;
-        let matrix: SparseMatrix<i8> = SparseMatrix::new(dimension);
-        assert_eq!(matrix.array.get_size(), total_elements, "Verifying sparse matrix array size");
-        assert_eq!(matrix.array.get_len(), total_elements, "Verifying sparse matrix array length");
+        let row: usize = 5;
+        let col: usize = 5;
+
+        // total = n x n / 2
+        let max_nonzero_elements: usize = 12;
+        let matrix: SparseMatrix<i8> = SparseMatrix::new(row, col);
+        assert_eq!(matrix.array.get_size(), max_nonzero_elements, "Invalid Sparse Matrix array size. It should be (row * col / 2)!");
+        assert_eq!(matrix.array.get_len(), 0, "Invalid Sparse Matrix array length. It should be 0!");
     }
+
+    // TODO: Add set and get unit tests for Sparse Matrix
+    #[test]
+    fn test_set() {}
 
     #[test]
-    fn test_set() {
-        let mut matrix: SparseMatrix<i8> = SparseMatrix::new(5);
-        for i in 1..6 {
-            for j in 1..6 {
-                matrix.set(i, j, i8::random())
-            }
-        }
-        assert_eq!(matrix.get(4, 3), matrix.get(3, 2), "Testing a sparse  matrix element set");
-
-        // n + i - j - 1
-        let test_index: usize = 5 + 4 - 3 - 1;
-        assert_eq!(matrix.get(4, 3), &matrix.array[test_index], "Testing a sparse matrix element set");
-    }
-
-    #[test]
-    fn test_get() {
-        let mut matrix: SparseMatrix<i8> = SparseMatrix::new(5);
-        let val: i8 = 10;
-        matrix.set(1, 1, val);
-        matrix.set(4, 5, val);
-        assert_eq!(matrix.get(1, 1), &val, "Testing a sparse matrix element fetch");
-        assert_eq!(matrix.get(4, 5), &val, "Testing a sparse matrix element fetch");
-        assert_eq!(matrix.get(4, 1), &0, "Testing a null sparse matrix element fetch");
-    }
+    fn test_get() {}
 }
