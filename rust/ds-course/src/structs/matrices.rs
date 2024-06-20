@@ -1,19 +1,23 @@
-use std::cmp::min;
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use crate::structs::arrays::{HeapArray};
-use crate::structs::matrices::MatrixType::{Dense, Diagonal, LowerTriangular, Toeplitz, Tridiagonal, UpperTriangular};
+use crate::structs::matrices::MatrixType::{Dense, Diagonal, LowerTriangular, Sparse, Toeplitz, Tridiagonal, UpperTriangular};
 
-enum MatrixType<T> {
+enum MatrixType<T>
+    where T: PartialEq
+{
     Dense(DenseMatrix<T>),
     Diagonal(DiagonalMatrix<T>),
     UpperTriangular(UpperTraingularMatrix<T>),
     LowerTriangular(LowerTriangularMatrix<T>),
     Toeplitz(ToeplitzMatrix<T>),
     Tridiagonal(TridiagonalMatrix<T>),
+    Sparse(SparseMatrix<T>),
 }
 
-pub(crate) struct Matrix<T> {
+pub(crate) struct Matrix<T>
+    where T: PartialEq
+{
     rows: usize,
     columns: usize,
     pub matrix_type: MatrixType<T>,
@@ -21,7 +25,7 @@ pub(crate) struct Matrix<T> {
     auto_adjust: bool,
 }
 
-impl<T> Matrix<T> {
+impl<T: PartialEq > Matrix<T> {
     pub fn new(row: usize, col: usize) -> Self
         where T: Default + Copy
     {
@@ -94,6 +98,18 @@ impl<T> Matrix<T> {
         }
     }
 
+    pub fn new_sparse(row: usize, col: usize) -> Self
+        where T: Default + Copy
+    {
+        Matrix {
+            rows: row,
+            columns: col,
+            matrix_type: Sparse(SparseMatrix::new(row, col)),
+            default_value: T::default(),
+            auto_adjust: false,
+        }
+    }
+
     pub fn get(&self, row: usize, col: usize) -> Option<&T> {
         match &self.matrix_type {
             Dense(matrix) => Some(matrix.get(row, col)),
@@ -102,6 +118,7 @@ impl<T> Matrix<T> {
             Diagonal(matrix) => Some(matrix.get(row, col)),
             Toeplitz(matrix) => Some(matrix.get(row, col)),
             Tridiagonal(matrix) => Some(matrix.get(row, col)),
+            Sparse(matrix) => Some(matrix.get(row, col)),
         }
     }
 
@@ -113,19 +130,21 @@ impl<T> Matrix<T> {
             Diagonal(matrix) => matrix.set(row, col, val),
             Toeplitz(matrix) => matrix.set(row, col, val),
             Tridiagonal(matrix) => matrix.set(row, col, val),
+            Sparse(matrix) => matrix.set(row, col, val),
         }
     }
 
-    pub fn get_array(&self) -> &HeapArray<T> {
-        match &self.matrix_type {
-            Dense(matrix) => &matrix.array,
-            UpperTriangular(matrix) => &matrix.array,
-            LowerTriangular(matrix) => &matrix.array,
-            Diagonal(matrix) => &matrix.array,
-            Toeplitz(matrix) => &matrix.array,
-            Tridiagonal(matrix) => &matrix.array,
-        }
-    }
+    // pub fn get_array(&self) -> &HeapArray<T> {
+    //     match &self.matrix_type {
+    //         Dense(matrix) => &matrix.array,
+    //         UpperTriangular(matrix) => &matrix.array,
+    //         LowerTriangular(matrix) => &matrix.array,
+    //         Diagonal(matrix) => &matrix.array,
+    //         Toeplitz(matrix) => &matrix.array,
+    //         Tridiagonal(matrix) => &matrix.array,
+    //         Sparse(matrix) => &matrix.array,
+    //     }
+    // }
 
     fn optimize(&mut self) -> ()
         where T:  PartialEq, T: Default
@@ -182,7 +201,7 @@ impl<T> Matrix<T> {
     }
 }
 
-impl<T: Display + Default > Display for Matrix<T> {
+impl<T: Display + Default + PartialEq > Display for Matrix<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for i in 1..self.rows + 1{
             for j in 1..self.columns + 1 {
@@ -199,7 +218,7 @@ enum IndexOrder {
     ColumnMajor
 }
 
-pub trait MatrixOperations<T> {
+pub trait MatrixOperations<T: PartialEq> {
     fn array_size(row: usize, col: usize) -> usize;
 
     fn array_index(&self, row: usize, col: usize) -> usize;
@@ -209,14 +228,16 @@ pub trait MatrixOperations<T> {
     fn set(&mut self, row: usize, col: usize, val: T);
 }
 
-pub struct DenseMatrix<T> {
+pub struct DenseMatrix<T>
+    where T: PartialEq
+{
     rows: usize,
     columns: usize,
     array: HeapArray<T>,
     index_order: IndexOrder
 }
 
-impl<T> DenseMatrix<T> {
+impl<T: PartialEq> DenseMatrix<T> {
     pub fn new(row: usize, col: usize) -> Self
         where T: Default + Copy
     {
@@ -239,7 +260,7 @@ impl<T> DenseMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for DenseMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for DenseMatrix<T> {
     fn array_size(row: usize, col: usize) -> usize {
         row * col
     }
@@ -265,25 +286,15 @@ impl<T> MatrixOperations<T> for DenseMatrix<T> {
     }
 }
 
-// impl<T: Display > Display for DenseMatrix<T> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-//         for i in 1..self.rows + 1 {
-//             for j in 1..self.columns + 1 {
-//                 write!(f, "{:>3} ", self.get(i, j))?;
-//             }
-//             writeln!(f, "")?;
-//         }
-//         Ok(())
-//     }
-// }
-
-pub struct TridiagonalMatrix<T> {
+pub struct TridiagonalMatrix<T>
+    where T: PartialEq
+{
     dimension: usize,
-    pub(crate) array: HeapArray<T>,
+    array: HeapArray<T>,
     default_value: T,
 }
 
-impl<T> TridiagonalMatrix<T> {
+impl<T: PartialEq> TridiagonalMatrix<T> {
     pub fn new(dimension: usize) -> Self
         where T: Default + Copy
     {
@@ -297,7 +308,7 @@ impl<T> TridiagonalMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for TridiagonalMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for TridiagonalMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
         3 * row - 2
     }
@@ -331,14 +342,16 @@ impl<T> MatrixOperations<T> for TridiagonalMatrix<T> {
     }
 }
 
-pub struct UpperTraingularMatrix<T> {
+pub struct UpperTraingularMatrix<T>
+    where T: PartialEq
+{
     dimension: usize,
-    pub array: HeapArray<T>,
+    array: HeapArray<T>,
     default_value: T,
     index_order: IndexOrder
 }
 
-impl<T> UpperTraingularMatrix<T> {
+impl<T: PartialEq> UpperTraingularMatrix<T> {
     pub fn new(dimension: usize) -> Self
         where T: Default + Copy
     {
@@ -393,14 +406,16 @@ impl<T> MatrixOperations<T> for UpperTraingularMatrix<T> {
     }
 }
 
-pub struct LowerTriangularMatrix<T> {
+pub struct LowerTriangularMatrix<T>
+    where T: PartialEq
+{
     dimension: usize,
-    pub array: HeapArray<T>,
+    array: HeapArray<T>,
     default_value: T,
     index_order: IndexOrder
 }
 
-impl<T> LowerTriangularMatrix<T> {
+impl<T: PartialEq> LowerTriangularMatrix<T> {
     pub fn new(dimension: usize) -> Self
         where T: Default + Copy
     {
@@ -426,7 +441,7 @@ impl<T> LowerTriangularMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for LowerTriangularMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for LowerTriangularMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
         row * (row + 1)/2
     }
@@ -458,13 +473,15 @@ impl<T> MatrixOperations<T> for LowerTriangularMatrix<T> {
     }
 }
 
-pub struct DiagonalMatrix<T> {
+pub struct DiagonalMatrix<T>
+    where T: PartialEq
+{
     dimension: usize,
-    pub(crate) array: HeapArray<T>,
+    array: HeapArray<T>,
     default_value: T
 }
 
-impl<T> DiagonalMatrix<T> {
+impl<T: PartialEq> DiagonalMatrix<T> {
     pub fn new(dimension: usize) -> Self
         where T: Default + Copy
     {
@@ -478,7 +495,7 @@ impl<T> DiagonalMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for DiagonalMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for DiagonalMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
         row
     }
@@ -505,12 +522,14 @@ impl<T> MatrixOperations<T> for DiagonalMatrix<T> {
 }
 
 // TODO: Fix Toeplitz Matrix struct
-pub struct ToeplitzMatrix<T> {
+pub struct ToeplitzMatrix<T>
+    where T: PartialEq
+{
     dimension: usize,
-    pub(crate) array: HeapArray<T>,
+    array: HeapArray<T>,
 }
 
-impl<T> ToeplitzMatrix<T> {
+impl<T: PartialEq> ToeplitzMatrix<T> {
     pub fn new(dimension: usize) -> Self
         where T: Default + Copy
     {
@@ -523,7 +542,7 @@ impl<T> ToeplitzMatrix<T> {
     }
 }
 
-impl<T> MatrixOperations<T> for ToeplitzMatrix<T> {
+impl<T: PartialEq> MatrixOperations<T> for ToeplitzMatrix<T> {
     fn array_size(rows: usize, cols: usize) -> usize {
         rows + cols - 1
     }
@@ -550,44 +569,87 @@ impl<T> MatrixOperations<T> for ToeplitzMatrix<T> {
     }
 }
 
-pub struct SparseMatrix<T> {
-    dimension: usize,
-    pub(crate) array: HeapArray<T>,
-    default_value: T
+#[derive(Debug)]
+#[derive(PartialEq)]
+#[derive(Default)]
+pub(crate) struct SparseMatrixElement<T> {
+    row: usize,
+    column: usize,
+    value: T,
 }
 
-impl<T> SparseMatrix<T> {
-    pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
-    {
-        let mut array: HeapArray<T> = HeapArray::with_capacity(Self::array_size(dimension, dimension));
-        array.fill(T::default());
-        SparseMatrix {
-            dimension,
-            array,
-            default_value: T::default()
+impl<T: Copy> Clone for SparseMatrixElement<T> {
+    fn clone(&self) -> Self {
+        SparseMatrixElement {
+            row: self.row,
+            column: self.column,
+            value: self.value
         }
     }
 }
 
-impl<T> MatrixOperations<T> for SparseMatrix<T> {
-    fn array_size(row: usize, _col: usize) -> usize {
-        row
+impl<T: Copy> Copy for SparseMatrixElement<T> {}
+
+pub struct SparseMatrix<T>
+    where T: PartialEq
+{
+    rows: usize,
+    columns: usize,
+    nonzero_count: usize,
+    array: HeapArray<SparseMatrixElement<T>>,
+    default_value: T
+}
+
+impl<T: Default + PartialEq> SparseMatrix<T> {
+    pub fn new(rows: usize, columns: usize) -> Self
+        where T: Default + Copy
+    {
+        let mut array: HeapArray<SparseMatrixElement<T>> = HeapArray::with_capacity(Self::array_size(rows, columns));
+        SparseMatrix {
+            rows,
+            columns,
+            nonzero_count: 0,
+            array: array,
+            default_value: T::default(),
+        }
+    }
+}
+
+impl<T: PartialEq> MatrixOperations<T> for SparseMatrix<T> {
+    fn array_size(row: usize, col: usize) -> usize {
+        (row * col) / 2
     }
 
     fn array_index(&self, row: usize, col: usize) -> usize {
         if row == 0 || col == 0 {
             panic!("Row or column can't be 0. Matrices always start with 1 indices!");
         }
-        row - 1
+        0
     }
 
     fn get(&self, row: usize, col: usize) -> &T {
+        for ele in self.array.iter() {
+            if ele.row == row && ele.column == col {
+                return &ele.value
+            }
+        }
         return &self.default_value
     }
 
-    fn set(&mut self, row: usize, col: usize, val: T) {
-
+    fn set(&mut self, row: usize, col: usize, val: T) where T: PartialEq {
+        if val != self.default_value {
+            if self.nonzero_count == (self.rows * self.columns) / 2 {
+                panic!("Sparse Matrix non-zero values count will exceed zero values count!")
+            }
+            self.array.push(
+                SparseMatrixElement{
+                    row,
+                    column: col,
+                    value: val,
+                }
+            );
+            self.nonzero_count += 1;
+        }
     }
 }
 
