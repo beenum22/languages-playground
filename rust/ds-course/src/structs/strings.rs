@@ -222,8 +222,14 @@ impl Debug for HeapString {
     }
 }
 
+impl Default for HeapString {
+    fn default() -> Self {
+        HeapString::new("")
+    }
+}
+
 #[cfg(test)]
-mod tests {
+mod heap_string {
     use crate::structs::arrays::{HeapArray};
     use crate::structs::strings::{HeapString};
 
@@ -331,5 +337,35 @@ mod tests {
         let str_3 = HeapString::new("decider");
         assert_eq!(str_1.are_anagram(&str_2), true, "Testing valid string anagram");
         assert_eq!(str_1.are_anagram(&str_3), false, "Testing invalid string anagram");
+    }
+
+    #[test]
+    fn test_partialeq_trait() {
+        let str_1 = HeapString::new("same");
+        let str_2 = HeapString::new("same");
+        let str_3 = HeapString::new("different");
+        assert_eq!(str_1, str_2, "PartialEq trait equality implementation failed!");
+        assert_ne!(str_1, str_3, "PartialEq trait non-equality implementation failed!");
+    }
+
+    #[test]
+    fn test_debug_trait() {
+        let str_1 = HeapString::new("foo");
+        let debug_output = format!("{:?}", str_1);
+        assert_eq!(debug_output, "foo", "Debug trait implementation failed!");
+    }
+
+    #[test]
+    fn test_display_trait() {
+        let str_1 = HeapString::new("foo");
+        let display_output = format!("{}", str_1);
+        assert_eq!(display_output, "foo", "Display trait implementation failed!");
+    }
+
+    #[test]
+    fn test_clone_trait() {
+        let str_1 = HeapString::new("foo");
+        let str_1_clone = str_1.clone();
+        assert_eq!(str_1, str_1_clone, "Clone trait implementation failed!");
     }
 }
