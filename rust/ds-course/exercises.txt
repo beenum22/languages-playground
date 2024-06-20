@@ -9,3 +9,8 @@ Exercises to perform using custom arrays:
     * Counting consonants in a string
     * Password validation in a string
     * Finding duplicated characters in a string using bitwise operations
+
+
+Exercises to perform using matrices:
+    * Arithmatic operations
+    * Conversion from different matrices
