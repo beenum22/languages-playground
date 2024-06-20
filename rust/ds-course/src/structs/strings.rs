@@ -206,7 +206,7 @@ impl PartialEq for HeapString {
 
 impl Display for HeapString {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for i in 0..self.data.get_len() {
+        for i in 0..self.data.get_len() - 1 {
             write!(f, "{}", self.data[i] as char)?;
         }
         Ok(())
@@ -215,7 +215,7 @@ impl Display for HeapString {
 
 impl Debug for HeapString {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for i in 0..self.data.get_len() {
+        for i in 0..self.data.get_len() - 1 {
             write!(f, "{}", self.data[i] as char)?;
         }
         Ok(())
