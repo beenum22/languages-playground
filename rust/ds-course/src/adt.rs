@@ -5,6 +5,7 @@ use std::time::Instant;
 
 use crate::structs::matrices::{Matrix, MatrixOperations, DiagonalMatrix, LowerTriangularMatrix, UpperTraingularMatrix, TridiagonalMatrix, ToeplitzMatrix};
 use crate::structs::arrays::{HeapArray};
+use crate::structs::linked_lists::LinkedList;
 use crate::structs::polynomials::Polynomial;
 use crate::structs::strings::{HeapString};
 
@@ -199,6 +200,20 @@ pub(crate) fn adt_demo<T: Default + Random + PartialEq + Display + PartialOrd + 
     }
     // println!("{}", matrix);
     println!("{}", matrix);
+
+    let mut p = Polynomial::new(3);
+    p.set_term(3,2);
+    p.set_term(5, 1);
+    p.set_term(-2, 0);
+    println!("{}", p);
+
+    let mut ll: LinkedList<u8> = LinkedList::new();
+    ll.push_front(1);
+    ll.push_front(2);
+    ll.push_front(3);
+    ll.push_front(4);
+
+    println!("LL: {:?}", ll);
 
     Ok(array)
 }

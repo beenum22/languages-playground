@@ -23,6 +23,8 @@ mod structs {
     pub mod arrays;
     pub mod strings;
     pub mod polynomials;
+    pub mod linked_lists;
+    pub mod smart_ptr;
 }
 
 
