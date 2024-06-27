@@ -177,7 +177,7 @@ impl<T> SharedSmartPointer<T> {
     }
 }
 
-impl<T: Clone> Clone for SharedSmartPointer<T> {
+impl<T> Clone for SharedSmartPointer<T> {
     fn clone(&self) -> Self {
         self.increment();
         SharedSmartPointer {
