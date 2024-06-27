@@ -24,7 +24,8 @@ mod structs {
     pub mod strings;
     pub mod polynomials;
     pub mod linked_lists;
-    pub mod smart_ptr;
+    pub mod smart_ptrs;
+    pub mod iterators;
 }
 
 
