@@ -1,3 +1,4 @@
+use std::ffi::c_int;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Deref};
 use num::Bounded;
@@ -8,9 +9,9 @@ type Link<T> = Option<SharedSmartPointer<Node<T>>>;
 #[derive(Debug)]
 #[derive(PartialEq)]
 #[derive(Clone)]
-struct Node<T> {
+pub struct Node<T> {
     next: Link<T>,
-    previous: Link<T>,
+    pub previous: Link<T>,
     data: T
 }
 
@@ -21,6 +22,14 @@ impl<T> Node<T> {
 
     pub fn next_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
         self.next.as_mut()
+    }
+
+    pub fn previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+        self.previous.as_ref()
+    }
+
+    pub fn previous_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+        self.previous.as_mut()
     }
 
     pub fn get_data(&mut self) -> &T {
@@ -108,7 +117,7 @@ impl<T> LinkedList<T> {
 
     pub fn previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
         match self.head.as_ref() {
-            Some(head) => head.next_as_ref(),
+            Some(head) => head.previous_as_ref(),
             None => None
         }
     }
@@ -126,18 +135,24 @@ impl<T> LinkedList<T> {
             Some(head) => {
                 head.set_previous(Some(new_node.clone()))
             }
-             None => &None
+            None => &None
          };
         self.length += 1;
     }
 
-    pub fn pop_front(&mut self) -> Option<T> where T: Copy {
-        self.head.take().map(|mut node| {
-            let data_copy = node.data;
-            self.head = node.next.take();
-            self.length -= 1;
-            data_copy
-        })
+    pub fn pop_front(&mut self) -> Option<T> where T: Copy + Debug {
+        match self.head.take() {
+            Some(mut node) => {
+                let data_copy = node.data;
+                self.head = node.next.take();
+                if self.head_as_ref().is_some() {
+                    self.head_as_mut().unwrap().set_previous(None);
+                }
+                self.length -= 1;
+                Some(data_copy)
+            },
+            None => None
+        }
     }
 
     pub fn sum(&self) -> T
@@ -182,7 +197,7 @@ impl<T> LinkedList<T> {
 
     // Time Complexity is O(n)
     pub fn linear_search(&self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
-        where T: Copy + Ord
+        where T: Ord
     {
         let mut current = self.head_as_ref();
         while !current.is_none() {
@@ -195,9 +210,32 @@ impl<T> LinkedList<T> {
     }
 
     // Time Complexity is ..
-    pub fn move_to_head_search(&self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
-        where T: Copy + Ord
+    pub fn move_to_head_search(&mut self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
+        where T: Ord
     {
+        let mut current = Some(self.head_as_ref().unwrap().clone());
+        while !current.is_none() {
+            if current.as_ref().unwrap().data == val {
+                if current.as_ref() != self.head_as_ref() {
+                    let current_prev = current.as_ref().unwrap().previous.clone();
+                    let current_next = current.as_ref().unwrap().next.clone();
+                    if current.as_mut().unwrap().next_as_mut().is_some() {
+                        current.as_mut().unwrap().previous_as_mut().unwrap().set_next(current_next);  // Adjust the older previous Node's next Node
+                        current.as_mut().unwrap().next_as_mut().unwrap().set_previous(current_prev);  // Adjust the older next Node's previous Node
+                    } else {
+                        current.as_mut().unwrap().previous_as_mut().unwrap().set_next(None);  // Adjust the older previous Node's next Node
+                    }
+
+                    current.as_mut().unwrap().set_previous(None);  // Set previous Node to None since it's the new head Node
+                    current.as_mut().unwrap().set_next(Some(self.head_as_mut().unwrap().clone()));  // Set next Node to old head Node
+
+
+                    self.head = Some(current.unwrap().clone());  // Update head Node to the newly found Node
+                }
+                return self.head_as_ref()
+            }
+            current = Some(current.unwrap().next_as_mut().unwrap().clone());
+        }
         None
     }
 
@@ -309,9 +347,12 @@ mod linked_list {
         ll.push_front(10);
 
         let head = ll.head_as_ref().unwrap();
-        let next = ll.head_as_ref().unwrap().next_as_ref().unwrap();
-        assert_eq!(head.data, 10, "Linked List has invalid data at head!");
-        assert_eq!(next.data, 5, "Linked List has invalid set at Node next!");
+        let next = ll.next_as_ref().unwrap();
+        assert_eq!(ll.head_as_ref().unwrap().data, 10, "Head Node has invalid data!");
+        assert_eq!(ll.previous_as_ref().is_none(), true, "Head Node has invalid previous Node set!");
+        assert_eq!(ll.next_as_ref().unwrap().data, 5, "Next Node has invalid data!");
+        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().unwrap().data, 10, "Next Node has invalid previous Node set!");
+        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_none(), true, "Next Node has invalid next Node set!");
     }
 
     #[test]
@@ -320,11 +361,12 @@ mod linked_list {
         ll.push_front(5);
         ll.push_front(10);
 
-        assert_eq!(ll.pop_front().unwrap(), 10, "Linked List Pop operation returned invalid popped data!");
-        assert_eq!(ll.head_as_ref().as_ref().unwrap().data, 5, "Linked List has invalid data at head after pop operation!");
-        assert_eq!(ll.head_as_ref().as_ref().unwrap().next, None, "Linked List has invalid set at Node next after pop operation!");
+        assert_eq!(ll.pop_front().unwrap(), 10, "Pop operation returned invalid popped data!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Head Node has invalid data after pop!");
+        assert_eq!(ll.next_as_ref().is_none(), true, "Head Node has invalid next Node set!");
+        assert_eq!(ll.previous_as_ref().is_none(), true, "Head Node has invalid previous Node set!");
         ll.pop_front();
-        assert!(ll.pop_front().is_none(), "Empty Linked List returned invalid popped data. It should have been None!");
+        assert!(ll.pop_front().is_none(), "Empty List returned invalid popped data. It should have been None!");
     }
 
     #[test]
@@ -402,8 +444,33 @@ mod linked_list {
         ll.push_front(5);
         ll.push_front(10);
         ll.push_front(2);
-        assert_eq!(ll.move_to_head_search(10), ll.head_as_ref().as_ref().unwrap().next.as_ref(), "Invalid Linked List node for searchable value!");
-        assert_eq!(ll.move_to_head_search(11), None, "Invalid Linked List node for unsearchable value!");
+
+        let node_1 = ll.linear_search(5).unwrap().clone();
+        let node_2 = ll.linear_search(10).unwrap().clone();
+        let node_3 = ll.linear_search(2).unwrap().clone();
+        // println!("Node 1 (5) = {:?}", node_1);
+        // println!("Node 2 (10) = {:?}", node_2);
+        // println!("Node 3 (2) = {:?}", node_3);
+
+        // Original List: 2 -> 10 -> 5
+        // Moved List: 10 -> 2 -> 5
+
+        // Try moving some in between Node
+        assert_eq!(*ll.move_to_head_search(10).unwrap(), node_2, "Failed to return the found Node!");
+        assert_eq!(ll.previous_as_ref().is_none(), true, "Moved Node has invalid previous Node set!");
+        assert_eq!(*ll.next_as_ref().unwrap(), node_3, "Moved Node has invalid next Node set!");
+        assert_eq!(*node_3.next_as_ref().unwrap(), node_1, "Old previous Node has invalid adjusted next Node set!");
+        assert_eq!(*node_1.previous_as_ref().unwrap(), node_3, "Old next Node has invalid adjusted previous Node set!");
+
+        // Try moving the already moved Node or head Node.
+        assert_eq!(*ll.move_to_head_search(10).unwrap(), node_2, "Failed to return the found Node!");
+        assert_eq!(ll.previous_as_ref().is_none(), true, "Unmoved Node has invalid previous Node set!");
+        assert_eq!(*ll.next_as_ref().unwrap(), node_3, "Unmoved Node has invalid next Node set!");
+        println!("{}", ll);
+        // Try moving the last Node
+        println!("F Node = {:?}", node_2.next_as_ref().unwrap());
+        assert_eq!(*ll.move_to_head_search(5).unwrap(), node_1, "Failed to return the found last Node!");
+        assert_eq!(node_3.next_as_ref().is_none(), true, "Last moved Node has invalid next Node set!");
     }
 
     #[test]
