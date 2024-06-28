@@ -209,6 +209,7 @@ impl<T> LinkedList<T> {
         None
     }
 
+    // TODO: The method looks very messy with a lot of Clones. Maybe it's fine but check other ways.
     // Time Complexity is ..
     pub fn move_to_head_search(&mut self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
         where T: Ord
@@ -439,7 +440,7 @@ mod linked_list {
     }
 
     #[test]
-    fn test_move_to_search() {
+    fn test_move_to_head_search() {
         let mut ll: LinkedList<u8> = LinkedList::new();
         ll.push_front(5);
         ll.push_front(10);
