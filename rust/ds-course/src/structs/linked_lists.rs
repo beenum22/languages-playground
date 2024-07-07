@@ -1,4 +1,3 @@
-use std::ffi::c_int;
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Deref};
 use num::Bounded;
@@ -11,7 +10,7 @@ type Link<T> = Option<SharedSmartPointer<Node<T>>>;
 #[derive(Clone)]
 pub struct Node<T> {
     next: Link<T>,
-    pub previous: Link<T>,
+    previous: Link<T>,
     data: T
 }
 
@@ -123,21 +122,7 @@ impl<T> LinkedList<T> {
     }
 
     pub fn push_front(&mut self, data: T) -> () {
-        let new_node = SharedSmartPointer::new(
-            Node {
-                next: self.head.take(),
-                previous: None,
-                data
-            }
-        );
-        self.head = Some(new_node.clone());
-        match self.head.as_mut().unwrap().next_as_mut() {
-            Some(head) => {
-                head.set_previous(Some(new_node.clone()))
-            }
-            None => &None
-         };
-        self.length += 1;
+        self.insert(0, data).expect("Out of bound index!");
     }
 
     pub fn pop_front(&mut self) -> Option<T> where T: Copy + Debug {
@@ -153,6 +138,97 @@ impl<T> LinkedList<T> {
             },
             None => None
         }
+    }
+
+    pub fn insert(&mut self, index: usize, data: T) -> Result<(), &'static str> {
+        if index > self.length {
+            return Err("Index out of bounds! We can only insert at existing indices or after the last node.");
+        }
+        let mut current = self.head_as_ref();
+        for i in 0..self.length + 1 {
+            if i == index {
+                let mut new_node = SharedSmartPointer::new(
+                    Node {
+                        next: None,
+                        previous: None,
+                        data
+                    }
+                );
+                match current {
+                    Some(_) => {
+                        let mut current_clone = current.unwrap().clone();
+                        match i == self.length {
+                            false => {
+                                match current_clone.previous_as_mut() {
+                                    Some(node) => {
+                                        node.set_next(Some(new_node.clone()));  // Set current->prev->next to new_node
+                                        new_node.set_previous(Some(node.clone()));
+                                    },
+                                    None => {
+                                        new_node.set_previous(None);
+                                        self.head = Some(new_node.clone());  // Because it will be the new head
+                                    }
+                                }
+                                new_node.set_next(Some(current_clone.clone()));
+                                current_clone.set_previous(Some(new_node));
+                            },
+                            true => {
+                                new_node.set_previous(Some(current_clone.clone()));
+                                current_clone.set_next(Some(new_node));
+                            }
+                        }
+                    },
+                    None => {
+                        self.head = Some(new_node.clone());
+                    }
+                }
+                self.length += 1;
+                break;
+            }
+
+            if i < self.length - 1 {
+                current = match current {
+                    Some(node) => node.next_as_ref(),
+                    None => current,
+                };
+            }
+        }
+        return Ok(())
+    }
+
+    pub fn delete(&mut self, index: usize) -> Result<(), &'static str> {
+        if index >= self.length {
+            return Err("Index out of bounds!");
+        }
+        let len = self.length;
+        let mut current = self.head_as_ref();
+        for i in 0..len {
+            if i == index {
+                match current {
+                    Some(_) => {
+                        let mut current_clone = current.unwrap().clone();
+                        if current_clone.previous_as_ref().is_none() {
+                            if current_clone.next_as_ref().is_some() {
+                                current_clone.next_as_mut().unwrap().set_previous(None);
+                            }
+                            self.head = current_clone.next.clone()
+                        }
+                        if current_clone.next_as_ref().is_none() {
+                            if current_clone.previous_as_ref().is_none() {
+                                self.head = None;
+                            } else {
+                                current_clone.previous_as_mut().unwrap().set_next(None);
+                            }
+                        }
+                    }
+                    None => ()
+                }
+                self.length -= 1;
+                break;
+            }
+            current = current.unwrap().next_as_ref();
+        }
+        Ok(())
     }
 
     pub fn sum(&self) -> T
@@ -240,11 +316,7 @@ impl<T> LinkedList<T> {
         None
     }
 
-    pub fn insert(&mut self, val: T) -> () {}
-
     pub fn sort(&mut self) -> () {}
-
-    pub fn delete(&mut self) {}
 }
 
 impl<T: Display> Display for LinkedList<T> {
@@ -368,6 +440,74 @@ mod linked_list {
         assert_eq!(ll.previous_as_ref().is_none(), true, "Head Node has invalid previous Node set!");
         ll.pop_front();
         assert!(ll.pop_front().is_none(), "Empty List returned invalid popped data. It should have been None!");
+    }
+
+    #[test]
+    fn test_insert() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        // ll.push_front(5);
+
+        ll.insert(0, 5);
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after insert in empty list!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after insert!");
+
+        ll.insert(0, 7);
+        assert_eq!(format!("{}", ll), "7 -> 5".to_string(), "Linked List is invalid after insert at the start!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after insert!");
+        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has invalid previous Node set!");
+        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_none(), true, "Moved Node has invalid next Node set!");
+
+        ll.insert(1, 6);
+        assert_eq!(format!("{}", ll), "7 -> 6 -> 5".to_string(), "Linked List is invalid after insert in the middle!");
+        assert_eq!(ll.length, 3, "Linked List has invalid length after insert!");
+        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has invalid previous Node set!");
+        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_some(), true, "Moved Node has invalid next Node set!");
+
+        ll.insert(3, 4);
+        assert_eq!(format!("{}", ll), "7 -> 6 -> 5 -> 4".to_string(), "Linked List is invalid after insert next to last node!");
+        assert_eq!(ll.length, 4, "Linked List has invalid length after insert!");
+        assert_eq!(ll.linear_search(4).unwrap().next_as_ref().is_none(), true, "New last Node has invalid next Node set!");
+        assert_eq!(ll.linear_search(4).unwrap().previous_as_ref().is_some(), true, "New last Node has invalid previous Node set!");
+
+        assert_eq!(
+            ll.insert(5, 10).unwrap_err(),
+            "Index out of bounds! We can only insert at existing indices or after the last node.",
+            "Linked List invalid index exception failed!"
+        );
+    }
+
+    #[test]
+    fn test_delete() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.push_front(5);
+        ll.push_front(10);
+        ll.push_front(15);
+        ll.push_front(20);
+        ll.push_front(25);
+
+        ll.delete(0);
+        assert_eq!(format!("{}", ll), "20 -> 15 -> 10 -> 5".to_string(), "Linked List is invalid after first index deletion!");
+        assert_eq!(ll.length, 4, "Linked List has invalid length after delete!");
+
+        ll.delete(3);
+        assert_eq!(format!("{}", ll), "20 -> 15 -> 10".to_string(), "Linked List is invalid after last index deletion!");
+        assert_eq!(ll.length, 3, "Linked List has invalid length after delete!");
+
+        ll.delete(2);
+        assert_eq!(format!("{}", ll), "20 -> 15".to_string(), "Linked List is invalid after middle index deletion!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after delete!");
+
+        ll.delete(2);
+        assert_eq!(
+            ll.delete(5).unwrap_err(),
+            "Index out of bounds!",
+            "Linked List didn't throw exception after invalid index deletion!"
+        );
+
+        ll.delete(1);
+        ll.delete(0);
+        assert_eq!(format!("{}", ll), "None".to_string(), "Linked List is invalid after all indices deletion!");
+        assert_eq!(ll.length, 0, "Linked List has invalid length after delete!");
     }
 
     #[test]
