@@ -53,7 +53,7 @@ impl PartialEq for Polynomial {
 
 impl Polynomial {
     pub fn new(count: usize) -> Self {
-        let mut terms = HeapArray::with_capacity(count);
+        let terms = HeapArray::with_capacity(count);
         Polynomial {
             count,
             terms
@@ -115,7 +115,7 @@ impl Polynomial {
 }
 
 mod polynomial {
-    use crate::structs::polynomials::Polynomial;
+    use super::*;
 
     #[test]
     fn test_new() {
