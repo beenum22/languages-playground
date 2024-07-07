@@ -28,12 +28,10 @@ impl<T> SmartPointer<T> {
         }
     }
 
-    pub fn leak(mut smart_ptr: SmartPointer<T>) -> NonNull<T> {
-        unsafe {
-            let ptr = NonNull::new(smart_ptr.ptr.as_ptr());
-            mem::forget(smart_ptr);
-            ptr.unwrap()
-        }
+    pub fn leak(smart_ptr: SmartPointer<T>) -> NonNull<T> {
+        let ptr = NonNull::new(smart_ptr.ptr.as_ptr());
+        mem::forget(smart_ptr);
+        ptr.unwrap()
     }
 
     pub fn unleak(ptr: NonNull<T>) -> SmartPointer<T> {
@@ -159,21 +157,15 @@ impl<T> SharedSmartPointer<T> {
     }
 
     pub fn count(&self) -> usize {
-        unsafe {
-            self.as_ref().count()
-        }
+        self.as_ref().count()
     }
 
     pub fn increment(&self) {
-        unsafe {
-            self.as_ref().increment()
-        }
+        self.as_ref().increment()
     }
 
     pub fn decrement(&self) {
-        unsafe {
-            self.as_ref().decrement()
-        }
+        self.as_ref().decrement()
     }
 }
 
@@ -285,7 +277,7 @@ mod smart_pointer {
 }
 
 mod shared_smart_pointer {
-    use crate::structs::smart_ptrs::SharedSmartPointer;
+    use super::*;
 
     #[test]
     fn test_new() {
@@ -338,8 +330,8 @@ mod shared_smart_pointer {
 }
 
 mod reference_counter {
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use crate::structs::smart_ptrs::ReferenceCounter;
+    use std::sync::atomic::{Ordering};
+    use super::*;
 
     #[test]
     fn test_new() {
@@ -375,7 +367,7 @@ mod reference_counter {
 }
 
 mod unsafe_mutable {
-    use crate::structs::smart_ptrs::UnsafeMutable;
+    use super::*;
 
     #[test]
     fn test_new() {
