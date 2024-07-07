@@ -15,12 +15,12 @@ enum MatrixType<T>
     Sparse(SparseMatrix<T>),
 }
 
-pub(crate) struct Matrix<T>
+pub struct Matrix<T>
     where T: PartialEq
 {
     rows: usize,
     columns: usize,
-    pub matrix_type: MatrixType<T>,
+    matrix_type: MatrixType<T>,
     default_value: T,
     auto_adjust: bool,
 }
@@ -604,7 +604,7 @@ impl<T: Default + PartialEq> SparseMatrix<T> {
     pub fn new(rows: usize, columns: usize) -> Self
         where T: Default + Copy
     {
-        let mut array: HeapArray<SparseMatrixElement<T>> = HeapArray::with_capacity(Self::array_size(rows, columns));
+        let array: HeapArray<SparseMatrixElement<T>> = HeapArray::with_capacity(Self::array_size(rows, columns));
         SparseMatrix {
             rows,
             columns,
