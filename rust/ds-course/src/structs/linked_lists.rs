@@ -440,6 +440,20 @@ impl<T: Display> Display for LinkedList<T> {
     }
 }
 
+impl<T> Drop for LinkedList<T> {
+    fn drop(&mut self) {
+        let mut current = self.head.take();
+        for _i in 0..self.length {
+            match current {
+                Some(mut node) => {
+                    current = node.next.take();
+                }
+                None => return ()
+            }
+        }
+    }
+}
+
 // impl<T> LinkedList<T> {
 //     pub fn into_iter(self) -> IntoIter<T> {
 //         IntoIter(self)
