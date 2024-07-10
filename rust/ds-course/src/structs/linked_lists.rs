@@ -66,6 +66,7 @@ impl<T: Display> Display for Node<T> {
 #[derive(Debug)]
 pub struct LinkedList<T> {
     head: Link<T>,
+    tail: Link<T>,
     length: usize
 }
 
@@ -73,6 +74,7 @@ impl<T> LinkedList<T> {
     pub fn new() -> Self {
         Self {
             head: None,
+            tail: None,
             length: 0
         }
     }
@@ -85,10 +87,12 @@ impl<T> LinkedList<T> {
         self.head.as_mut()
     }
 
-    // TODO: Finish Swapping
-    pub fn swap(&mut self, left: Link<T>, right: Link<T>) -> () {
-        // left.
-        // let mut temp_1 = self.head_as_mut().unwrap().next;
+    pub fn tail_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+        self.tail.as_ref()
+    }
+
+    pub fn tail_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+        self.tail.as_mut()
     }
 
     pub fn peek(&self) -> Option<&T> {
@@ -107,25 +111,67 @@ impl<T> LinkedList<T> {
         return self.length
     }
 
-    pub fn next_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn head_next_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
         match self.head.as_ref() {
             Some(head) => head.next_as_ref(),
             None => None
         }
     }
 
-    pub fn previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn head_previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
         match self.head.as_ref() {
             Some(head) => head.previous_as_ref(),
             None => None
         }
     }
 
+    // Time Complexity is O(1)
     pub fn push_front(&mut self, data: T) -> () {
-        self.insert(0, data).expect("Out of bound index!");
+        let mut new_node = SharedSmartPointer::new(
+            Node {
+                next: None,
+                previous: None,
+                data
+            }
+        );
+        match self.head.take() {
+            Some(mut node) => {
+                node.set_previous(Some(new_node.clone()));
+                new_node.set_next(Some(node));
+            }
+            None => {
+                self.tail = Some(new_node.clone());
+            }
+        };
+        self.head = Some(new_node.clone());
+        self.length += 1;
     }
 
-    pub fn pop_front(&mut self) -> Option<T> where T: Copy + Debug {
+    // Time Complexity is O(1)
+    pub fn push_back(&mut self, data: T) -> () {
+        let mut new_node = SharedSmartPointer::new(
+            Node {
+                next: None,
+                previous: None,
+                data
+            }
+        );
+        match self.tail.take() {
+            Some(mut node) => {
+                node.set_next(Some(new_node.clone()));
+                new_node.set_previous(Some(node));
+            }
+            None => {
+                self.head = Some(new_node.clone());
+            }
+        };
+        self.tail = Some(new_node.clone());
+        self.length += 1;
+    }
+
+    // Time Complexity is O(1)
+    pub fn pop_front(&mut self) -> Option<T> where T: Copy
+    {
         match self.head.take() {
             Some(mut node) => {
                 let data_copy = node.data;
@@ -134,15 +180,39 @@ impl<T> LinkedList<T> {
                     self.head_as_mut().unwrap().set_previous(None);
                 }
                 self.length -= 1;
+                if self.length == 0 {
+                    self.tail = None;
+                }
                 Some(data_copy)
             },
             None => None
         }
     }
 
-    pub fn insert(&mut self, index: usize, data: T) -> Result<(), &'static str> {
+    // Time Complexity is O(1)
+    pub fn pop_back(&mut self) -> Option<T> where T: Copy
+    {
+        match self.tail.take() {
+            Some(mut node) => {
+                let data_copy = node.data;
+                self.tail = node.previous.take();
+                if self.tail_as_ref().is_some() {
+                    self.tail_as_mut().unwrap().set_next(None);
+                }
+                self.length -= 1;
+                if self.length == 0 {
+                    self.head = None;
+                }
+                Some(data_copy)
+            },
+            None => None
+        }
+    }
+
+    // Time Complexity is O(n)
+    pub fn insert(&mut self, index: usize, data: T) -> () {
         if index > self.length {
-            return Err("Index out of bounds! We can only insert at existing indices or after the last node.");
+            panic!("Index out of bounds! We can only insert at existing indices or after the last node.");
         }
         let mut current = self.head_as_ref();
         for i in 0..self.length + 1 {
@@ -174,12 +244,14 @@ impl<T> LinkedList<T> {
                             },
                             true => {
                                 new_node.set_previous(Some(current_clone.clone()));
-                                current_clone.set_next(Some(new_node));
+                                current_clone.set_next(Some(new_node.clone()));
+                                self.tail = Some(new_node);
                             }
                         }
                     },
                     None => {
                         self.head = Some(new_node.clone());
+                        self.tail = Some(new_node.clone());
                     }
                 }
                 self.length += 1;
@@ -193,12 +265,12 @@ impl<T> LinkedList<T> {
                 };
             }
         }
-        return Ok(())
     }
 
-    pub fn delete(&mut self, index: usize) -> Result<(), &'static str> {
+    // Time Complexity is O(n)
+    pub fn delete(&mut self, index: usize) -> () {
         if index >= self.length {
-            return Err("Index out of bounds!");
+            panic!("Index out of bounds!");
         }
         let len = self.length;
         let mut current = self.head_as_ref();
@@ -216,8 +288,10 @@ impl<T> LinkedList<T> {
                         if current_clone.next_as_ref().is_none() {
                             if current_clone.previous_as_ref().is_none() {
                                 self.head = None;
+                                self.tail = None;
                             } else {
                                 current_clone.previous_as_mut().unwrap().set_next(None);
+                                self.tail = current_clone.previous.clone();
                             }
                         }
                     }
@@ -228,9 +302,36 @@ impl<T> LinkedList<T> {
             }
             current = current.unwrap().next_as_ref();
         }
+    }
+
+    // TODO: Finish Swapping
+    pub fn swap(&mut self, left: usize, right: usize) -> Result<(), &'static str> {
+        if left >= self.length || right >= self.length {
+            return Err("Index out of bounds!")
+        }
+        if left == right {
+            return Ok(())
+        }
+        // let mut current = self.head_as_ref();
+        // let mut left_clone: Option<SharedSmartPointer<Node<T>>>;
+        // let mut right_clone: Option<SharedSmartPointer<Node<T>>>;
+        // for i in 0..self.length {
+        //     if i == left {
+        //         left_clone = Some(current.unwrap().clone());
+        //     } else if i == right {
+        //         right_clone = Some(current.unwrap().clone());
+        //     }
+        //
+        //     if left_clone.is_some() && right_clone.is_some() {
+        //
+        //     }
+        //
+        //     current = current.unwrap().next_as_ref();
+        // }
         Ok(())
     }
 
+    // Time Complexity is O(n)
     pub fn sum(&self) -> T
         where T: Copy + AddAssign + Default
     {
@@ -243,6 +344,7 @@ impl<T> LinkedList<T> {
         sum
     }
 
+    // Time Complexity is O(n)
     pub fn max(&self) -> T
         where T: Copy + Ord + Bounded
     {
@@ -257,6 +359,7 @@ impl<T> LinkedList<T> {
         max
     }
 
+    // Time Complexity is O(n)
     pub fn min(&self) -> T
         where T: Copy + Ord + Bounded
     {
