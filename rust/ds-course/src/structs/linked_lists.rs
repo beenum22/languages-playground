@@ -530,19 +530,81 @@ mod linked_list {
     }
 
     #[test]
+    fn test_head_as_ref() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        assert_eq!(ll.head_as_ref(), None, "Linked List has invalid initial Head!");
+        ll.insert(0, 1);
+        assert_eq!(ll.head_as_ref().is_some(), true, "Linked List has None Head after push!")
+    }
+
+    #[test]
+    fn test_tail_as_ref() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        assert_eq!(ll.tail_as_ref(), None, "Linked List has invalid initial Tail!");
+        ll.push_front(1);
+        assert_eq!(ll.tail_as_ref().is_some(), true, "Linked List has None Tail after push!");
+    }
+
+    #[test]
     fn test_push_front() {
         let mut ll: LinkedList<u8> = LinkedList::new();
 
         ll.push_front(5);
-        ll.push_front(10);
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after first front push!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after front push!");
+        assert_eq!(ll.head_as_ref().is_some(), true, "Linked List has invalid None Head after first front push!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after first front push!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after first front push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_none(), true, "Head has invalid next Node after first front push!");
+        assert_eq!(ll.tail_as_ref().is_some(), true, "Linked List has invalid None Tail after first front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after first front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_none(), true, "Tail has invalid previous Node after first front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after first front push!");
 
-        let head = ll.head_as_ref().unwrap();
-        let next = ll.next_as_ref().unwrap();
-        assert_eq!(ll.head_as_ref().unwrap().data, 10, "Head Node has invalid data!");
-        assert_eq!(ll.previous_as_ref().is_none(), true, "Head Node has invalid previous Node set!");
-        assert_eq!(ll.next_as_ref().unwrap().data, 5, "Next Node has invalid data!");
-        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().unwrap().data, 10, "Next Node has invalid previous Node set!");
-        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_none(), true, "Next Node has invalid next Node set!");
+        ll.push_front(10);
+        assert_eq!(format!("{}", ll), "10 -> 5".to_string(), "Linked List is invalid after second front push!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after push!");
+        assert_eq!(ll.head_as_ref().is_some(), true, "Linked List has invalid None Head after second front push!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 10, "Linked List has invalid Head after second front push!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after second front push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_some(), true, "Head has invalid None next Node after second front push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().unwrap().data, 5, "Head has invalid next Node after second front push!");
+        assert_eq!(ll.tail_as_ref().is_some(), true, "Linked List has invalid None Tail after second front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after second front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Tail has invalid None previous Node after second front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().data, 10, "Tail has invalid previous Node after second front push!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after second front push!");
+    }
+
+    #[test]
+    fn test_push_back() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+
+        ll.push_back(5);
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after first back push!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after back push!");
+        assert_eq!(ll.head_as_ref().is_some(), true, "Linked List has invalid None Head after first back push!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after first back push!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after first back push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_none(), true, "Head has invalid next Node after first back push!");
+        assert_eq!(ll.tail_as_ref().is_some(), true, "Linked List has invalid None Tail after first back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after first back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_none(), true, "Tail has invalid previous Node after first back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after first back push!");
+
+        ll.push_back(10);
+        assert_eq!(format!("{}", ll), "5 -> 10".to_string(), "Linked List is invalid after second back push!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after push!");
+        assert_eq!(ll.head_as_ref().is_some(), true, "Linked List has invalid None Head after second back push!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after second back push!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after second back push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_some(), true, "Head has invalid None next Node after second back push!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().unwrap().data, 10, "Head has invalid next Node after second back push!");
+        assert_eq!(ll.tail_as_ref().is_some(), true, "Linked List has invalid None Tail after second back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 10, "Linked List has invalid Tail after second back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Tail has invalid None previous Node after second back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().data, 5, "Tail has invalid previous Node after second back push!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after second back push!");
     }
 
     #[test]
@@ -550,47 +612,112 @@ mod linked_list {
         let mut ll: LinkedList<u8> = LinkedList::new();
         ll.push_front(5);
         ll.push_front(10);
+        ll.push_front(15);
 
-        assert_eq!(ll.pop_front().unwrap(), 10, "Pop operation returned invalid popped data!");
-        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Head Node has invalid data after pop!");
-        assert_eq!(ll.next_as_ref().is_none(), true, "Head Node has invalid next Node set!");
-        assert_eq!(ll.previous_as_ref().is_none(), true, "Head Node has invalid previous Node set!");
         ll.pop_front();
-        assert!(ll.pop_front().is_none(), "Empty List returned invalid popped data. It should have been None!");
+        assert_eq!(format!("{}", ll), "10 -> 5".to_string(), "Linked List is invalid after first front pop!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after pop!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 10, "Linked List has invalid Head after first front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after first front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_some(), true, "Head has invalid None next Node after first front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().unwrap().data, 5, "Head has invalid next Node after first front pop!");
+
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after front pop!");
+
+        ll.pop_front();
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after second front pop!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after second front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after second front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().previous_as_ref().is_none(), true, "Head has invalid previous Node after second front pop!");
+        assert_eq!(ll.head_as_ref().unwrap().next_as_ref().is_none(), true, "Head has invalid None next Node after second front pop!");
+
+        ll.pop_front();
+        assert_eq!(format!("{}", ll), "None", "Linked List is invalid after last front pop!");
+        assert_eq!(ll.length, 0, "Linked List has invalid length after last front pop!");
+        assert_eq!(ll.head_as_ref().is_none(), true, "Linked List has invalid Head after last front pop!");
+        assert_eq!(ll.tail_as_ref().is_none(), true, "Linked List has invalid Tail after last front pop!")
+    }
+
+    #[test]
+    fn test_pop_back() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.push_front(5);
+        ll.push_front(10);
+        ll.push_front(15);
+
+        ll.pop_back();
+        assert_eq!(format!("{}", ll), "15 -> 10".to_string(), "Linked List is invalid after first back pop!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 10, "Linked List has invalid Tail after first back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after first back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Tail has invalid None previous Node after first back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().data, 15, "Tail has invalid previous Node after first back pop!");
+
+        assert_eq!(ll.head_as_ref().unwrap().data, 15, "Linked List has invalid Head after back pop!");
+
+        ll.pop_back();
+        assert_eq!(format!("{}", ll), "15".to_string(), "Linked List is invalid after second back pop!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after second back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 15, "Linked List has invalid Tail after second back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_none(), true, "Tail has invalid None previous Node after second back pop!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Tail has invalid next Node after second back pop!");
+
+        ll.pop_back();
+        assert_eq!(format!("{}", ll), "None", "Linked List is invalid after last back pop!");
+        assert_eq!(ll.length, 0, "Linked List has invalid length after last back pop!");
+        assert_eq!(ll.head_as_ref().is_none(), true, "Linked List has invalid Head after last back pop!");
+        assert_eq!(ll.tail_as_ref().is_none(), true, "Linked List has invalid Tail after last back pop!")
     }
 
     #[test]
     fn test_insert() {
         let mut ll: LinkedList<u8> = LinkedList::new();
-        // ll.push_front(5);
 
         ll.insert(0, 5);
         assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after insert in empty list!");
         assert_eq!(ll.length, 1, "Linked List has invalid length after insert!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after initial insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after initial insert!");
+        assert_eq!(ll.head_as_ref().unwrap().next, None, "Linked List has invalid next after initial insert!");
+        assert_eq!(ll.head_as_ref().unwrap().previous, None, "Linked List has invalid previous after initial insert!");
 
         ll.insert(0, 7);
         assert_eq!(format!("{}", ll), "7 -> 5".to_string(), "Linked List is invalid after insert at the start!");
         assert_eq!(ll.length, 2, "Linked List has invalid length after insert!");
-        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has invalid previous Node set!");
-        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_none(), true, "Moved Node has invalid next Node set!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert at the start!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after insert at the start!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has None previous Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().unwrap().data, 7, "Moved Node has invalid previous Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().is_none(), true, "Moved Node has invalid next Node set!");
 
         ll.insert(1, 6);
         assert_eq!(format!("{}", ll), "7 -> 6 -> 5".to_string(), "Linked List is invalid after insert in the middle!");
         assert_eq!(ll.length, 3, "Linked List has invalid length after insert!");
-        assert_eq!(ll.next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has invalid previous Node set!");
-        assert_eq!(ll.next_as_ref().unwrap().next_as_ref().is_some(), true, "Moved Node has invalid next Node set!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert in the middle!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after insert in the middle!");
+        assert_eq!(ll.head_next_as_ref().is_some(), true, "Head Node has None next Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().data, 6, "Head Node has invalid next Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has None previous Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().unwrap().data, 7, "Moved Node has invalid previous Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().is_some(), true, "Moved Node has None next Node set!");
+        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().unwrap().data, 5, "Moved Node has invalid next Node set!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Tail Node has None previous Node set!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().data, 6, "Tail Node has invalid previous Node set!");
 
         ll.insert(3, 4);
         assert_eq!(format!("{}", ll), "7 -> 6 -> 5 -> 4".to_string(), "Linked List is invalid after insert next to last node!");
         assert_eq!(ll.length, 4, "Linked List has invalid length after insert!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert next to last node!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 4, "Linked List has invalid Tail after insert next to last node!");
         assert_eq!(ll.linear_search(4).unwrap().next_as_ref().is_none(), true, "New last Node has invalid next Node set!");
         assert_eq!(ll.linear_search(4).unwrap().previous_as_ref().is_some(), true, "New last Node has invalid previous Node set!");
+    }
 
-        assert_eq!(
-            ll.insert(5, 10).unwrap_err(),
-            "Index out of bounds! We can only insert at existing indices or after the last node.",
-            "Linked List invalid index exception failed!"
-        );
+    #[test]
+    #[should_panic(expected = "Index out of bounds! We can only insert at existing indices or after the last node.")]
+    fn test_insert_panic() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.insert(5, 5);
     }
 
     #[test]
@@ -605,26 +732,55 @@ mod linked_list {
         ll.delete(0);
         assert_eq!(format!("{}", ll), "20 -> 15 -> 10 -> 5".to_string(), "Linked List is invalid after first index deletion!");
         assert_eq!(ll.length, 4, "Linked List has invalid length after delete!");
+        assert_eq!(ll.head_as_ref().unwrap().data, 20, "Linked List has invalid Head after first index deletion!");
 
         ll.delete(3);
         assert_eq!(format!("{}", ll), "20 -> 15 -> 10".to_string(), "Linked List is invalid after last index deletion!");
         assert_eq!(ll.length, 3, "Linked List has invalid length after delete!");
+        assert_eq!(ll.tail_as_ref().unwrap().data, 10, "Linked List has invalid Tail after last index deletion!");
 
         ll.delete(2);
         assert_eq!(format!("{}", ll), "20 -> 15".to_string(), "Linked List is invalid after middle index deletion!");
         assert_eq!(ll.length, 2, "Linked List has invalid length after delete!");
-
-        ll.delete(2);
-        assert_eq!(
-            ll.delete(5).unwrap_err(),
-            "Index out of bounds!",
-            "Linked List didn't throw exception after invalid index deletion!"
-        );
+        assert_eq!(ll.tail_as_ref().unwrap().data, 15, "Linked List has invalid Tail after middle deletion!");
 
         ll.delete(1);
         ll.delete(0);
         assert_eq!(format!("{}", ll), "None".to_string(), "Linked List is invalid after all indices deletion!");
         assert_eq!(ll.length, 0, "Linked List has invalid length after delete!");
+        assert_eq!(ll.head_as_ref().is_none(), true, "Linked List has invalid Head for empty List!");
+        assert_eq!(ll.tail_as_ref().is_none(), true, "Linked List has invalid Tail for empty List!");
+    }
+
+    #[test]
+    #[should_panic(expected = "Index out of bounds!")]
+    fn test_delete_panic() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.delete(0);
+    }
+
+    #[test]
+    fn test_swap() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.push_front(5);
+        ll.push_front(10);
+        ll.push_front(15);
+        ll.push_front(20);
+
+        assert_eq!(
+            ll.swap(5, 10).unwrap_err(),
+            "Index out of bounds!",
+            "Linked List invalid indices exception failed!"
+        );
+
+        ll.swap(1, 2).expect("Failed to swap Nodes");
+        assert_eq!(format!("{}", ll), "20 -> 10 -> 15 -> 5".to_string(), "Linked List is invalid after swapping middle Nodes!");
+
+        ll.swap(2, 3).expect("Failed to swap Nodes");
+        assert_eq!(format!("{}", ll), "20 -> 10 -> 5 -> 15".to_string(), "Linked List is invalid after swapping last Nodes!");
+
+        ll.swap(0, 1).expect("Failed to swap Nodes");
+        assert_eq!(format!("{}", ll), "10 -> 20 -> 5 -> 15".to_string(), "Linked List is invalid after swapping initial Nodes!");
     }
 
     #[test]
@@ -650,12 +806,6 @@ mod linked_list {
         let mut ll: LinkedList<u8> = LinkedList::new();
         ll.push_front(10);
         assert_eq!(ll.peek_mut(), Some(&mut 10u8), "Linked List invalid head value!");
-    }
-
-    #[test]
-    fn test_head_as_ref() {
-        let ll: LinkedList<u8> = LinkedList::new();
-        assert_eq!(ll.head, None, "Linked List has invalid initial Head!")
     }
 
     #[test]
@@ -715,15 +865,15 @@ mod linked_list {
 
         // Try moving some in between Node
         assert_eq!(*ll.move_to_head_search(10).unwrap(), node_2, "Failed to return the found Node!");
-        assert_eq!(ll.previous_as_ref().is_none(), true, "Moved Node has invalid previous Node set!");
-        assert_eq!(*ll.next_as_ref().unwrap(), node_3, "Moved Node has invalid next Node set!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Moved Node has invalid previous Node set!");
+        assert_eq!(*ll.head_next_as_ref().unwrap(), node_3, "Moved Node has invalid next Node set!");
         assert_eq!(*node_3.next_as_ref().unwrap(), node_1, "Old previous Node has invalid adjusted next Node set!");
         assert_eq!(*node_1.previous_as_ref().unwrap(), node_3, "Old next Node has invalid adjusted previous Node set!");
 
         // Try moving the already moved Node or head Node.
         assert_eq!(*ll.move_to_head_search(10).unwrap(), node_2, "Failed to return the found Node!");
-        assert_eq!(ll.previous_as_ref().is_none(), true, "Unmoved Node has invalid previous Node set!");
-        assert_eq!(*ll.next_as_ref().unwrap(), node_3, "Unmoved Node has invalid next Node set!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Unmoved Node has invalid previous Node set!");
+        assert_eq!(*ll.head_next_as_ref().unwrap(), node_3, "Unmoved Node has invalid next Node set!");
         println!("{}", ll);
         // Try moving the last Node
         println!("F Node = {:?}", node_2.next_as_ref().unwrap());
