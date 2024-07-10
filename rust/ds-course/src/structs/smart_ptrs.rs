@@ -205,6 +205,9 @@ pub struct UnsafeMutable<T> {
     value: T
 }
 
+// Note:
+// Imitates Rust Cell. However, the get method here should just return the copy of the value and
+// as_ptr method should return the mutable pointer instead.
 impl<T> UnsafeMutable<T> {
     pub fn new(val: T) -> Self {
         Self {
