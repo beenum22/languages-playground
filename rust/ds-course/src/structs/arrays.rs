@@ -132,6 +132,15 @@ impl<T> HeapArray<T> {
         self.length += 1;
     }
 
+    pub(crate) fn pop(&mut self) -> T where T: Default {
+        unsafe {
+            let data_copy = ptr::read(self.ptr.add(self.length - 1));
+            ptr::write(self.ptr.add(self.length - 1), T::default());
+            self.length -= 1;
+            data_copy
+        }
+    }
+
     // Time Complexity is constant
     pub(crate) fn get(&self, index: usize) -> &T {
         if index >= self.length {
@@ -1093,6 +1102,25 @@ mod heap_array {
         };
     }
 
+    macro_rules! define_test_pop {
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_pop_$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let rnd_val_1 = rng.gen::<$type>();
+                        let rnd_val_2 = rng.gen::<$type>();
+                        let mut array: HeapArray<$type> = HeapArray::values(&[rnd_val_1, rnd_val_2]);
+                        array.pop();
+                        assert_eq!(format!("{}", array), format!("[{}, {}]", rnd_val_1, $type::default()), "Array is invalid after pop");
+                        assert_eq!(array.length, 1, "Verifying length after push");
+                    }
+                }
+            )*
+        };
+    }
+
     macro_rules! define_test_get {
         ($($type:ty),*) => {
             $(
@@ -1289,6 +1317,7 @@ mod heap_array {
 
     define_test_resize!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_push!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_pop!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_get!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_delete!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_fill!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
