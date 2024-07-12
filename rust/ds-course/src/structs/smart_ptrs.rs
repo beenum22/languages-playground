@@ -79,6 +79,7 @@ impl<T> Drop for SmartPointer<T> {
     }
 }
 
+#[derive(Debug)]
 pub struct ReferenceCounter<T> {
     value: T,
     count: UnsafeMutable<AtomicUsize>
@@ -201,6 +202,7 @@ impl<T> Drop for SharedSmartPointer<T> {
 }
 
 // Imitates UnsafeCell
+#[derive(Debug)]
 pub struct UnsafeMutable<T> {
     value: T
 }
