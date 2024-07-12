@@ -1,6 +1,7 @@
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Deref};
 use num::Bounded;
+use crate::structs::arrays::HeapArray;
 use crate::structs::smart_ptrs::{SharedSmartPointer};
 
 type Link<T> = Option<SharedSmartPointer<Node<T>>>;
@@ -304,30 +305,51 @@ impl<T> LinkedList<T> {
         }
     }
 
-    // TODO: Finish Swapping
+    // Time Complexity: Min=O(2), Max=O(n)
     pub fn swap(&mut self, left: usize, right: usize) -> Result<(), &'static str> {
         if left >= self.length || right >= self.length {
             return Err("Index out of bounds!")
+        } else if left > right {
+            return Err("Left index must be greater than right index!")
         }
         if left == right {
             return Ok(())
         }
-        // let mut current = self.head_as_ref();
-        // let mut left_clone: Option<SharedSmartPointer<Node<T>>>;
-        // let mut right_clone: Option<SharedSmartPointer<Node<T>>>;
-        // for i in 0..self.length {
-        //     if i == left {
-        //         left_clone = Some(current.unwrap().clone());
-        //     } else if i == right {
-        //         right_clone = Some(current.unwrap().clone());
-        //     }
-        //
-        //     if left_clone.is_some() && right_clone.is_some() {
-        //
-        //     }
-        //
-        //     current = current.unwrap().next_as_ref();
-        // }
+
+        let mut current = self.head_as_ref();
+        let mut left_node: Option<SharedSmartPointer<Node<T>>> = None;
+        let mut right_node: Option<SharedSmartPointer<Node<T>>> = None;
+
+        for i in 0..self.length {
+            if i == left {
+                left_node = Some(current.unwrap().clone());
+            } else if i == right {
+                right_node = Some(current.unwrap().clone());
+            }
+
+            if left_node.is_some() && right_node.is_some() {
+                left_node.as_mut().unwrap().set_next(right_node.as_mut().unwrap().next.clone());
+                right_node.as_mut().unwrap().set_previous(left_node.as_mut().unwrap().previous.clone());
+
+                if left_node.as_ref().unwrap().previous_as_ref().is_some() {
+                    left_node.as_mut().unwrap().previous_as_mut().unwrap().set_next(right_node.clone());
+                } else {
+                    self.head = right_node.clone();
+                }
+
+                if right_node.as_ref().unwrap().next_as_ref().is_some() {
+                    right_node.as_mut().unwrap().next_as_mut().unwrap().set_previous(left_node.clone());
+                } else {
+                    self.tail = left_node.clone();
+                }
+
+                right_node.as_mut().unwrap().set_next(left_node.clone());
+                left_node.as_mut().unwrap().set_previous(right_node.clone());
+                return Ok(())
+            }
+
+            current = current.unwrap().next_as_ref();
+        }
         Ok(())
     }
 
@@ -424,7 +446,6 @@ impl<T> LinkedList<T> {
 
 impl<T: Display> Display for LinkedList<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-
         let mut current = self.head_as_ref();
         if current.is_none() {
             write!(f, "None")?;
@@ -437,6 +458,16 @@ impl<T: Display> Display for LinkedList<T> {
             }
         }
         Ok(())
+    }
+}
+
+impl<T: Default> From<HeapArray<T>> for LinkedList<T> {
+    fn from(mut value: HeapArray<T>) -> Self {
+        let mut ll: LinkedList<T> = LinkedList::new();
+        for i in 0..value.get_len() {
+            ll.push_front(value.pop())
+        }
+        ll
     }
 }
 
@@ -516,11 +547,36 @@ mod node {
         assert_eq!(node.next.is_some(), true, "Failed to set the next link for the node!");
         assert_eq!(node.next.unwrap().as_ptr(), next_link_ptr, "Invalid next link ptr found for the node!");
     }
+
+    #[test]
+    fn test_set_previous() {
+        let mut node: Node<u8> = Node {
+            next: None,
+            previous: None,
+            data: 1u8,
+        };
+
+        let prev_link: Link<u8> = Some(
+            SharedSmartPointer::new(
+                Node {
+                    next: None,
+                    previous: None,
+                    data: 1u8,
+                }
+            )
+        );
+        let prev_link_ptr = prev_link.as_ref().unwrap().as_ptr();
+
+        node.set_previous(prev_link);
+        assert_eq!(node.previous.is_some(), true, "Failed to set the previous link for the node!");
+        assert_eq!(node.previous.unwrap().as_ptr(), prev_link_ptr, "Invalid previous link ptr found for the node!");
+    }
 }
 
 #[cfg(test)]
 mod linked_list {
     use std::fmt::{Display};
+    use crate::structs::arrays::HeapArray;
     use crate::structs::linked_lists::{LinkedList};
 
     #[test]
@@ -762,10 +818,10 @@ mod linked_list {
     #[test]
     fn test_swap() {
         let mut ll: LinkedList<u8> = LinkedList::new();
-        ll.push_front(5);
-        ll.push_front(10);
-        ll.push_front(15);
-        ll.push_front(20);
+        ll.push_front(1);
+        ll.push_front(2);
+        ll.push_front(3);
+        ll.push_front(4);
 
         assert_eq!(
             ll.swap(5, 10).unwrap_err(),
@@ -774,13 +830,13 @@ mod linked_list {
         );
 
         ll.swap(1, 2).expect("Failed to swap Nodes");
-        assert_eq!(format!("{}", ll), "20 -> 10 -> 15 -> 5".to_string(), "Linked List is invalid after swapping middle Nodes!");
+        assert_eq!(format!("{}", ll), "4 -> 2 -> 3 -> 1".to_string(), "Linked List is invalid after swapping middle Nodes!");
 
         ll.swap(2, 3).expect("Failed to swap Nodes");
-        assert_eq!(format!("{}", ll), "20 -> 10 -> 5 -> 15".to_string(), "Linked List is invalid after swapping last Nodes!");
+        assert_eq!(format!("{}", ll), "4 -> 2 -> 1 -> 3".to_string(), "Linked List is invalid after swapping last Nodes!");
 
         ll.swap(0, 1).expect("Failed to swap Nodes");
-        assert_eq!(format!("{}", ll), "10 -> 20 -> 5 -> 15".to_string(), "Linked List is invalid after swapping initial Nodes!");
+        assert_eq!(format!("{}", ll), "2 -> 4 -> 1 -> 3".to_string(), "Linked List is invalid after swapping initial Nodes!");
     }
 
     #[test]
@@ -887,6 +943,13 @@ mod linked_list {
         ll.push_front(5);
         ll.push_front(10);
         assert_eq!(format!("{}", ll), format!("10 -> 5"), "Linked List has invalid Display trait!");
+    }
+
+    #[test]
+    fn test_from_trait_heap_array() {
+        let arr: HeapArray<u8> = HeapArray::values(&[1, 2, 3]);
+        let ll: LinkedList<u8> = LinkedList::from(arr);
+        assert_eq!(format!("{}", ll), "1 -> 2 -> 3".to_string(), "Linked List is invalid after conversion from Heap Array!");
     }
 }
 
