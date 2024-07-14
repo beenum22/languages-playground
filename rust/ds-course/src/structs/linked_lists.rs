@@ -350,6 +350,26 @@ impl<T> LinkedList<T> {
         }
     }
 
+    fn swap_nodes(mut node_1: Link<T>, mut node_2: Link<T>) {
+        if node_1.is_none() || node_2.is_none() {
+            panic!("None Nodes cannot be swapped!")
+        }
+
+        node_1.as_mut().unwrap().set_next(node_2.as_mut().unwrap().next.clone());
+        node_2.as_mut().unwrap().set_previous(node_1.as_mut().unwrap().previous.clone());
+
+        if node_1.as_ref().unwrap().previous_as_ref().is_some() {
+            node_1.as_mut().unwrap().previous_as_mut().unwrap().set_next(node_2.clone());
+        }
+
+        if node_2.as_ref().unwrap().next_as_ref().is_some() {
+            node_2.as_mut().unwrap().next_as_mut().unwrap().set_previous(node_1.clone());
+        }
+
+        node_2.as_mut().unwrap().set_next(node_1.clone());
+        node_1.as_mut().unwrap().set_previous(node_2.clone());
+    }
+
     // Time Complexity: Min=O(2), Max=O(n)
     pub fn swap(&mut self, left: usize, right: usize) -> Result<(), &'static str> {
         if left >= self.length || right >= self.length {
@@ -373,23 +393,13 @@ impl<T> LinkedList<T> {
             }
 
             if left_node.is_some() && right_node.is_some() {
-                left_node.as_mut().unwrap().set_next(right_node.as_mut().unwrap().next.clone());
-                right_node.as_mut().unwrap().set_previous(left_node.as_mut().unwrap().previous.clone());
-
-                if left_node.as_ref().unwrap().previous_as_ref().is_some() {
-                    left_node.as_mut().unwrap().previous_as_mut().unwrap().set_next(right_node.clone());
-                } else {
+                if left_node.as_ref().unwrap().previous_as_ref().is_none() {
                     self.head = right_node.clone();
                 }
-
-                if right_node.as_ref().unwrap().next_as_ref().is_some() {
-                    right_node.as_mut().unwrap().next_as_mut().unwrap().set_previous(left_node.clone());
-                } else {
+                if right_node.as_ref().unwrap().next_as_ref().is_none() {
                     self.tail = left_node.clone();
                 }
-
-                right_node.as_mut().unwrap().set_next(left_node.clone());
-                left_node.as_mut().unwrap().set_previous(right_node.clone());
+                Self::swap_nodes(left_node, right_node);
                 return Ok(())
             }
 
