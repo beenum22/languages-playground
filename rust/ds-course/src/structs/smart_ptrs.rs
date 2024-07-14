@@ -1,6 +1,6 @@
 use std::{alloc, mem, ptr};
 use std::alloc::{Layout};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Deref, DerefMut};
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -123,7 +123,6 @@ impl<T: Clone> Clone for ReferenceCounter<T> {
 }
 
 // Imitates Rc from Rust
-#[derive(Debug)]
 #[derive(PartialEq)]
 pub struct SharedSmartPointer<T> {
     ptr: NonNull<ReferenceCounter<T>>
@@ -183,6 +182,16 @@ impl<T> Deref for SharedSmartPointer<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.as_ref().value
+    }
+}
+
+impl<T: Debug> Debug for SharedSmartPointer<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SharedSmartPointer")
+            .field("ptr", &self.ptr)
+            .field("value", &self.as_ref().value)
+            .field("count", &self.count())
+            .finish()
     }
 }
 
