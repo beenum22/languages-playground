@@ -73,7 +73,6 @@ impl<T: Debug> Debug for Node<T> {
 //     }
 // }
 
-#[derive(Debug)]
 pub struct LinkedList<T> {
     head: Link<T>,
     tail: Link<T>,
@@ -219,53 +218,90 @@ impl<T> LinkedList<T> {
         }
     }
 
+    fn insert_before_node(&mut self, mut node: Link<T>, data: T) -> Link<T> where T: Debug {
+        let mut new_node = SharedSmartPointer::new(
+            Node {
+                next: None,
+                previous: None,
+                data
+            }
+        );
+        if node.is_none() {
+            if node.is_none() {
+                // panic!("Node to insert after is None!");
+                self.head = Some(new_node.clone());
+                self.tail = Some(new_node.clone());
+                self.length += 1;
+                return Some(new_node)
+            }
+        }
+        println!("YOOOO {:?}", node.clone().unwrap());
+        match node.as_mut().unwrap().previous_as_mut() {
+            Some(prev_node) => {
+                prev_node.set_next(Some(new_node.clone()));  // Set current->prev->next to new_node
+                new_node.set_previous(Some(prev_node.clone()));
+            },
+            None => {
+                new_node.set_previous(None);
+                self.head = Some(new_node.clone());
+            }
+        }
+        new_node.set_next(node.clone());
+        node.unwrap().set_previous(Some(new_node.clone()));
+        self.length += 1;
+        Some(new_node)
+    }
+
+    fn insert_after_node(&mut self, mut node: Link<T>, data: T) -> Link<T> {
+        let mut new_node = SharedSmartPointer::new(
+            Node {
+                next: None,
+                previous: None,
+                data
+            }
+        );
+        if node.is_none() {
+            // panic!("Node to insert after is None!");
+            self.head = Some(new_node.clone());
+            self.tail = Some(new_node.clone());
+            self.length += 1;
+            return Some(new_node)
+        }
+        match node.as_mut().unwrap().next_as_mut() {
+            Some(next_node) => {
+                next_node.set_previous(Some(new_node.clone()));
+                new_node.set_next(Some(next_node.clone()));
+            }
+            None => {
+                new_node.set_next(None);
+                self.tail = Some(new_node.clone());
+            }
+        };
+        new_node.set_previous(node.clone());
+        node.unwrap().set_next(Some(new_node.clone()));
+
+        self.length += 1;
+        Some(new_node)
+    }
+
     // Time Complexity is O(n)
-    pub fn insert(&mut self, index: usize, data: T) -> () {
+    pub fn insert(&mut self, index: usize, data: T) -> () where T: Debug {
         if index > self.length {
             panic!("Index out of bounds! We can only insert at existing indices or after the last node.");
         }
         let mut current = self.head_as_ref();
         for i in 0..self.length + 1 {
             if i == index {
-                let mut new_node = SharedSmartPointer::new(
-                    Node {
-                        next: None,
-                        previous: None,
-                        data
-                    }
-                );
-                match current {
-                    Some(_) => {
-                        let mut current_clone = current.unwrap().clone();
-                        match i == self.length {
-                            false => {
-                                match current_clone.previous_as_mut() {
-                                    Some(node) => {
-                                        node.set_next(Some(new_node.clone()));  // Set current->prev->next to new_node
-                                        new_node.set_previous(Some(node.clone()));
-                                    },
-                                    None => {
-                                        new_node.set_previous(None);
-                                        self.head = Some(new_node.clone());  // Because it will be the new head
-                                    }
-                                }
-                                new_node.set_next(Some(current_clone.clone()));
-                                current_clone.set_previous(Some(new_node));
-                            },
-                            true => {
-                                new_node.set_previous(Some(current_clone.clone()));
-                                current_clone.set_next(Some(new_node.clone()));
-                                self.tail = Some(new_node);
-                            }
-                        }
+                let mut current_node = current.map(|node| {node.clone()});
+                match i == self.length {
+                    false => {
+                        self.insert_before_node(current_node.clone(), data);
                     },
-                    None => {
-                        self.head = Some(new_node.clone());
-                        self.tail = Some(new_node.clone());
+                    true => {
+                        self.insert_after_node(current_node.clone(), data);
                     }
                 }
-                self.length += 1;
-                break;
+                return;
             }
 
             if i < self.length - 1 {
@@ -750,47 +786,88 @@ mod linked_list {
     }
 
     #[test]
+    fn test_insert_before_node() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+
+        let node_1 = ll.insert_before_node(None, 5u8);
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after first insert!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after first insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after first insert!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Linked List has invalid previous Node after first insert!");
+        assert_eq!(ll.head_next_as_ref().is_none(), true, "Linked List has invalid next Node after first insert!");
+
+        let node_2 = ll.insert_before_node(node_1.clone(), 10u8);
+        assert_eq!(format!("{}", ll), "10 -> 5".to_string(), "Linked List is invalid after second insert!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after second insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after second insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Tail after second insert!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Linked List has invalid previous Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().is_some(), true, "Linked List has invalid next Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid next Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().is_some(), true, "Linked List has invalid previuos Node for the next Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List has invalid previuos Node for the next Node after second insert!");
+
+        let node_3 = ll.insert_before_node(node_1.clone(), 8u8);
+        assert_eq!(format!("{}", ll), "10 -> 8 -> 5".to_string(), "Linked List is invalid after third insert!");
+        assert_eq!(ll.length, 3, "Linked List has invalid length after third insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after third insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Tail after third insert!");
+        assert_eq!(node_2.as_ref().unwrap().next_as_ref().unwrap().as_ptr(), node_3.as_ref().unwrap().as_ptr(), "Linked List has invalid previous Node after third insert!");
+        assert_eq!(node_1.as_ref().unwrap().previous_as_ref().unwrap().as_ptr(), node_3.as_ref().unwrap().as_ptr(), "Linked List has invalid next Node after third insert!");
+    }
+
+    #[test]
+    fn test_insert_after_node() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+
+        // ll.push_front(5u8);
+        let node_1 = ll.insert_before_node(None, 5u8);
+        assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after first insert!");
+        assert_eq!(ll.length, 1, "Linked List has invalid length after first insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after first insert!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Linked List has invalid previous Node after first insert!");
+        assert_eq!(ll.head_next_as_ref().is_none(), true, "Linked List has invalid next Node after first insert!");
+
+        let node_2 = ll.insert_after_node(node_1.clone(), 10u8);
+        assert_eq!(format!("{}", ll), "5 -> 10".to_string(), "Linked List is invalid after second insert!");
+        assert_eq!(ll.length, 2, "Linked List has invalid length after second insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after second insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List has invalid Tail after second insert!");
+        assert_eq!(ll.head_previous_as_ref().is_none(), true, "Linked List Head has invalid previous Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().is_some(), true, "Linked List Head has invalid None next Node after second insert!");
+        assert_eq!(ll.head_next_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List Head has invalid next Node after second insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().next_as_ref().is_none(), true, "Linked List Tail has invalid next Node after second insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Linked List Tail has invalid None previous Node after second insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List Tail has invalid previous Node after second insert!");
+
+        let node_3 = ll.insert_after_node(node_1.clone(), 8u8);
+        assert_eq!(format!("{}", ll), "5 -> 8 -> 10".to_string(), "Linked List is invalid after third insert!");
+        assert_eq!(ll.length, 3, "Linked List has invalid length after third insert!");
+        assert_eq!(ll.head_as_ref().unwrap().as_ptr(), node_1.as_ref().unwrap().as_ptr(), "Linked List has invalid Head after third insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().as_ptr(), node_2.as_ref().unwrap().as_ptr(), "Linked List has invalid Tail after third insert!");
+        assert_eq!(ll.head_next_as_ref().unwrap().as_ptr(), node_3.as_ref().unwrap().as_ptr(), "Linked List has invalid next Node for Head after third insert!");
+        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().as_ptr(), node_3.as_ref().unwrap().as_ptr(), "Linked List has invalid previous Node for Tail after third insert!");
+    }
+
+    #[test]
     fn test_insert() {
         let mut ll: LinkedList<u8> = LinkedList::new();
 
         ll.insert(0, 5);
         assert_eq!(format!("{}", ll), "5".to_string(), "Linked List is invalid after insert in empty list!");
         assert_eq!(ll.length, 1, "Linked List has invalid length after insert!");
-        assert_eq!(ll.head_as_ref().unwrap().data, 5, "Linked List has invalid Head after initial insert!");
-        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after initial insert!");
-        assert_eq!(ll.head_as_ref().unwrap().next, None, "Linked List has invalid next after initial insert!");
-        assert_eq!(ll.head_as_ref().unwrap().previous, None, "Linked List has invalid previous after initial insert!");
 
         ll.insert(0, 7);
         assert_eq!(format!("{}", ll), "7 -> 5".to_string(), "Linked List is invalid after insert at the start!");
         assert_eq!(ll.length, 2, "Linked List has invalid length after insert!");
-        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert at the start!");
-        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after insert at the start!");
-        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has None previous Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().unwrap().data, 7, "Moved Node has invalid previous Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().is_none(), true, "Moved Node has invalid next Node set!");
 
         ll.insert(1, 6);
         assert_eq!(format!("{}", ll), "7 -> 6 -> 5".to_string(), "Linked List is invalid after insert in the middle!");
         assert_eq!(ll.length, 3, "Linked List has invalid length after insert!");
-        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert in the middle!");
-        assert_eq!(ll.tail_as_ref().unwrap().data, 5, "Linked List has invalid Tail after insert in the middle!");
-        assert_eq!(ll.head_next_as_ref().is_some(), true, "Head Node has None next Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().data, 6, "Head Node has invalid next Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().is_some(), true, "Moved Node has None previous Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().previous_as_ref().unwrap().data, 7, "Moved Node has invalid previous Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().is_some(), true, "Moved Node has None next Node set!");
-        assert_eq!(ll.head_next_as_ref().unwrap().next_as_ref().unwrap().data, 5, "Moved Node has invalid next Node set!");
-        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().is_some(), true, "Tail Node has None previous Node set!");
-        assert_eq!(ll.tail_as_ref().unwrap().previous_as_ref().unwrap().data, 6, "Tail Node has invalid previous Node set!");
 
         ll.insert(3, 4);
         assert_eq!(format!("{}", ll), "7 -> 6 -> 5 -> 4".to_string(), "Linked List is invalid after insert next to last node!");
         assert_eq!(ll.length, 4, "Linked List has invalid length after insert!");
-        assert_eq!(ll.head_as_ref().unwrap().data, 7, "Linked List has invalid Head after insert next to last node!");
-        assert_eq!(ll.tail_as_ref().unwrap().data, 4, "Linked List has invalid Tail after insert next to last node!");
-        assert_eq!(ll.linear_search(4).unwrap().next_as_ref().is_none(), true, "New last Node has invalid next Node set!");
-        assert_eq!(ll.linear_search(4).unwrap().previous_as_ref().is_some(), true, "New last Node has invalid previous Node set!");
     }
 
     #[test]
