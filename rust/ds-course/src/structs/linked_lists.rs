@@ -6,7 +6,6 @@ use crate::structs::smart_ptrs::{SharedSmartPointer};
 
 type Link<T> = Option<SharedSmartPointer<Node<T>>>;
 
-#[derive(Debug)]
 #[derive(PartialEq)]
 #[derive(Clone)]
 pub struct Node<T> {
@@ -51,6 +50,16 @@ impl<T: Display> Display for Node<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ", self.data)?;
         Ok(())
+    }
+}
+
+impl<T: Debug> Debug for Node<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Node")
+            .field("data", &self.data)
+            .field("next", &self.next.as_ref().map(|node| node.as_ptr()))
+            .field("previous", &self.previous.as_ref().map(|node| node.as_ptr()))
+            .finish()
     }
 }
 
@@ -458,6 +467,21 @@ impl<T: Display> Display for LinkedList<T> {
             }
         }
         Ok(())
+    }
+}
+
+impl<T: Debug> Debug for LinkedList<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut debug_struct = f.debug_struct("LinkedList");
+        let mut debug_list = Vec::new();
+        let mut current = self.head_as_ref();
+        while !current.is_none() {
+            debug_list.push(current.unwrap());
+            current = current.as_ref().unwrap().next_as_ref();
+        }
+        debug_struct.field("Length", &self.length);
+        debug_struct.field("Nodes", &debug_list);
+        debug_struct.finish()
     }
 }
 
