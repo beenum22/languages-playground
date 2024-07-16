@@ -2,9 +2,9 @@ use std::fmt::{Debug, Display, Formatter};
 use std::ops::{Add, AddAssign, Deref};
 use num::Bounded;
 use crate::structs::arrays::HeapArray;
-use crate::structs::smart_ptrs::{SharedSmartPointer};
+use crate::structs::smart_ptrs::{AtomicReferenceCounter};
 
-type Link<T> = Option<SharedSmartPointer<Node<T>>>;
+type Link<T> = Option<AtomicReferenceCounter<Node<T>>>;
 
 #[derive(PartialEq)]
 #[derive(Clone)]
@@ -15,19 +15,19 @@ pub struct Node<T> {
 }
 
 impl<T> Node<T> {
-    pub fn next_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn next_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         self.next.as_ref()
     }
 
-    pub fn next_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+    pub fn next_as_mut(&mut self) -> Option<&mut AtomicReferenceCounter<Node<T>>> {
         self.next.as_mut()
     }
 
-    pub fn previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn previous_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         self.previous.as_ref()
     }
 
-    pub fn previous_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+    pub fn previous_as_mut(&mut self) -> Option<&mut AtomicReferenceCounter<Node<T>>> {
         self.previous.as_mut()
     }
 
@@ -88,19 +88,19 @@ impl<T> LinkedList<T> {
         }
     }
 
-    pub fn head_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn head_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         self.head.as_ref()
     }
 
-    pub fn head_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+    pub fn head_as_mut(&mut self) -> Option<&mut AtomicReferenceCounter<Node<T>>> {
         self.head.as_mut()
     }
 
-    pub fn tail_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn tail_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         self.tail.as_ref()
     }
 
-    pub fn tail_as_mut(&mut self) -> Option<&mut SharedSmartPointer<Node<T>>> {
+    pub fn tail_as_mut(&mut self) -> Option<&mut AtomicReferenceCounter<Node<T>>> {
         self.tail.as_mut()
     }
 
@@ -120,14 +120,14 @@ impl<T> LinkedList<T> {
         return self.length
     }
 
-    pub fn head_next_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn head_next_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         match self.head.as_ref() {
             Some(head) => head.next_as_ref(),
             None => None
         }
     }
 
-    pub fn head_previous_as_ref(&self) -> Option<&SharedSmartPointer<Node<T>>> {
+    pub fn head_previous_as_ref(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
         match self.head.as_ref() {
             Some(head) => head.previous_as_ref(),
             None => None
@@ -136,7 +136,7 @@ impl<T> LinkedList<T> {
 
     // Time Complexity is O(1)
     pub fn push_front(&mut self, data: T) -> () {
-        let mut new_node = SharedSmartPointer::new(
+        let mut new_node = AtomicReferenceCounter::new(
             Node {
                 next: None,
                 previous: None,
@@ -158,7 +158,7 @@ impl<T> LinkedList<T> {
 
     // Time Complexity is O(1)
     pub fn push_back(&mut self, data: T) -> () {
-        let mut new_node = SharedSmartPointer::new(
+        let mut new_node = AtomicReferenceCounter::new(
             Node {
                 next: None,
                 previous: None,
@@ -219,7 +219,7 @@ impl<T> LinkedList<T> {
     }
 
     fn insert_before_node(&mut self, mut node: Link<T>, data: T) -> Link<T> where T: Debug {
-        let mut new_node = SharedSmartPointer::new(
+        let mut new_node = AtomicReferenceCounter::new(
             Node {
                 next: None,
                 previous: None,
@@ -253,7 +253,7 @@ impl<T> LinkedList<T> {
     }
 
     fn insert_after_node(&mut self, mut node: Link<T>, data: T) -> Link<T> {
-        let mut new_node = SharedSmartPointer::new(
+        let mut new_node = AtomicReferenceCounter::new(
             Node {
                 next: None,
                 previous: None,
@@ -382,8 +382,8 @@ impl<T> LinkedList<T> {
         }
 
         let mut current = self.head_as_ref();
-        let mut left_node: Option<SharedSmartPointer<Node<T>>> = None;
-        let mut right_node: Option<SharedSmartPointer<Node<T>>> = None;
+        let mut left_node: Option<AtomicReferenceCounter<Node<T>>> = None;
+        let mut right_node: Option<AtomicReferenceCounter<Node<T>>> = None;
 
         for i in 0..self.length {
             if i == left {
@@ -452,7 +452,7 @@ impl<T> LinkedList<T> {
     }
 
     // Time Complexity is O(n)
-    pub fn linear_search(&self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
+    pub fn linear_search(&self, val: T) -> Option<&AtomicReferenceCounter<Node<T>>>
         where T: Ord
     {
         let mut current = self.head_as_ref();
@@ -467,7 +467,7 @@ impl<T> LinkedList<T> {
 
     // TODO: The method looks very messy with a lot of Clones. Maybe it's fine but check other ways.
     // Time Complexity is ..
-    pub fn move_to_head_search(&mut self, val: T) -> Option<&SharedSmartPointer<Node<T>>>
+    pub fn move_to_head_search(&mut self, val: T) -> Option<&AtomicReferenceCounter<Node<T>>>
         where T: Ord
     {
         let mut current = Some(self.head_as_ref().unwrap().clone());
@@ -534,7 +534,7 @@ impl<T: Debug> Debug for LinkedList<T> {
 impl<T: Default> From<HeapArray<T>> for LinkedList<T> {
     fn from(mut value: HeapArray<T>) -> Self {
         let mut ll: LinkedList<T> = LinkedList::new();
-        for i in 0..value.get_len() {
+        for _i in 0..value.get_len() {
             ll.push_front(value.pop())
         }
         ll
@@ -592,7 +592,7 @@ impl<T> Drop for LinkedList<T> {
 #[cfg(test)]
 mod node {
     use crate::structs::linked_lists::{Link, Node};
-    use crate::structs::smart_ptrs::SharedSmartPointer;
+    use crate::structs::smart_ptrs::AtomicReferenceCounter;
 
     #[test]
     fn test_set_next() {
@@ -603,7 +603,7 @@ mod node {
         };
 
         let next_link: Link<u8> = Some(
-            SharedSmartPointer::new(
+            AtomicReferenceCounter::new(
                 Node {
                     next: None,
                     previous: None,
@@ -627,7 +627,7 @@ mod node {
         };
 
         let prev_link: Link<u8> = Some(
-            SharedSmartPointer::new(
+            AtomicReferenceCounter::new(
                 Node {
                     next: None,
                     previous: None,

@@ -9,11 +9,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // Imitates Box from Rust
 #[derive(Debug)]
 #[derive(PartialEq)]
-pub struct HeapContainer<T> {
+pub struct HeapBox<T> {
     ptr: NonNull<T>
 }
 
-impl<T> HeapContainer<T> {
+impl<T> HeapBox<T> {
     pub fn new(value: T) -> Self {
         let layout = Layout::new::<T>();
         unsafe {
@@ -28,13 +28,13 @@ impl<T> HeapContainer<T> {
         }
     }
 
-    pub fn leak(smart_ptr: HeapContainer<T>) -> NonNull<T> {
+    pub fn leak(smart_ptr: HeapBox<T>) -> NonNull<T> {
         let ptr = NonNull::new(smart_ptr.ptr.as_ptr());
         mem::forget(smart_ptr);
         ptr.unwrap()
     }
 
-    pub fn unleak(ptr: NonNull<T>) -> HeapContainer<T> {
+    pub fn unleak(ptr: NonNull<T>) -> HeapBox<T> {
         Self { ptr }
     }
 
@@ -43,33 +43,33 @@ impl<T> HeapContainer<T> {
     }
 }
 
-impl<T: Clone> Clone for HeapContainer<T> {
+impl<T: Clone> Clone for HeapBox<T> {
     fn clone(&self) -> Self {
-        HeapContainer::new(self.deref().clone())
+        HeapBox::new(self.deref().clone())
     }
 }
 
-impl<T: Display> Display for HeapContainer<T> {
+impl<T: Display> Display for HeapBox<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ", *self)?;
         Ok(())
     }
 }
 
-impl<T> Deref for HeapContainer<T> {
+impl<T> Deref for HeapBox<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         unsafe { self.ptr.as_ref() }
     }
 }
 
-impl<T> DerefMut for HeapContainer<T> {
+impl<T> DerefMut for HeapBox<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.ptr.as_mut() }
     }
 }
 
-impl<T> Drop for HeapContainer<T> {
+impl<T> Drop for HeapBox<T> {
     fn drop(&mut self) {
         let layout = Layout::new::<T>();
         unsafe {
@@ -80,12 +80,12 @@ impl<T> Drop for HeapContainer<T> {
 }
 
 #[derive(Debug)]
-pub struct ReferenceCounter<T> {
+pub struct AtomicReferenceState<T> {
     value: T,
     count: UnsafeMutable<AtomicUsize>
 }
 
-impl<T> ReferenceCounter<T>{
+impl<T> AtomicReferenceState<T>{
     fn new(val: T) -> Self {
         Self {
             value: val,
@@ -113,7 +113,7 @@ impl<T> ReferenceCounter<T>{
 
 }
 
-impl<T: Clone> Clone for ReferenceCounter<T> {
+impl<T: Clone> Clone for AtomicReferenceState<T> {
     fn clone(&self) -> Self {
         Self {
             value: self.value.clone(),
@@ -122,37 +122,37 @@ impl<T: Clone> Clone for ReferenceCounter<T> {
     }
 }
 
-// Imitates Rc from Rust
+// Imitates Arc from Rust
 #[derive(PartialEq)]
-pub struct SharedSmartPointer<T> {
-    ptr: NonNull<ReferenceCounter<T>>
+pub struct AtomicReferenceCounter<T> {
+    ptr: NonNull<AtomicReferenceState<T>>
     // ptr: *mut ReferenceCounter<T>
     // ptr: &'static mut ReferenceCounter<T>
 }
 
-impl<T> SharedSmartPointer<T> {
+impl<T> AtomicReferenceCounter<T> {
     pub fn new(val: T) -> Self {
-        let rc = ReferenceCounter::new(val);
-        let smart_ptr = HeapContainer::new(rc);
-        let leak_ptr = HeapContainer::leak(smart_ptr);
+        let rc = AtomicReferenceState::new(val);
+        let smart_ptr = HeapBox::new(rc);
+        let leak_ptr = HeapBox::leak(smart_ptr);
         Self {
             ptr: leak_ptr
         }
     }
 
-    pub fn as_ref(&self) -> &ReferenceCounter<T> {
+    pub fn as_ref(&self) -> &AtomicReferenceState<T> {
         unsafe {
-            &*(self.ptr.as_ptr() as *const ReferenceCounter<T>)
+            &*(self.ptr.as_ptr() as *const AtomicReferenceState<T>)
         }
     }
 
-    pub fn as_mut(&mut self) -> &mut ReferenceCounter<T> {
+    pub fn as_mut(&mut self) -> &mut AtomicReferenceState<T> {
         unsafe {
             &mut *(self.ptr.as_ptr())
         }
     }
 
-    pub fn as_ptr(&self) -> *mut ReferenceCounter<T> {
+    pub fn as_ptr(&self) -> *mut AtomicReferenceState<T> {
         self.ptr.as_ptr()
     }
 
@@ -169,23 +169,23 @@ impl<T> SharedSmartPointer<T> {
     }
 }
 
-impl<T> Clone for SharedSmartPointer<T> {
+impl<T> Clone for AtomicReferenceCounter<T> {
     fn clone(&self) -> Self {
         self.increment();
-        SharedSmartPointer {
+        AtomicReferenceCounter {
             ptr: self.ptr
         }
     }
 }
 
-impl<T> Deref for SharedSmartPointer<T> {
+impl<T> Deref for AtomicReferenceCounter<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.as_ref().value
     }
 }
 
-impl<T: Debug> Debug for SharedSmartPointer<T> {
+impl<T: Debug> Debug for AtomicReferenceCounter<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SharedSmartPointer")
             .field("ptr", &self.ptr)
@@ -195,17 +195,17 @@ impl<T: Debug> Debug for SharedSmartPointer<T> {
     }
 }
 
-impl<T> DerefMut for SharedSmartPointer<T> {
+impl<T> DerefMut for AtomicReferenceCounter<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.as_mut().value
     }
 }
 
-impl<T> Drop for SharedSmartPointer<T> {
+impl<T> Drop for AtomicReferenceCounter<T> {
     fn drop(&mut self) {
         self.decrement();
         if self.count() == 0usize {
-            drop(HeapContainer::unleak(self.ptr))
+            drop(HeapBox::unleak(self.ptr))
         }
     }
 }
@@ -233,13 +233,13 @@ impl<T> UnsafeMutable<T> {
 }
 
 #[cfg(test)]
-mod heap_container {
+mod heap_box {
     use std::ptr::NonNull;
-    use crate::structs::smart_ptrs::HeapContainer;
+    use crate::structs::smart_ptrs::HeapBox;
 
     #[test]
     fn test_new() {
-        let s_ptr = HeapContainer::new(3);
+        let s_ptr = HeapBox::new(3);
         assert_eq!(*s_ptr, 3, "Smart pointer immutable derefencing failed or diferent data is stored!");
     }
 
@@ -247,8 +247,8 @@ mod heap_container {
     fn test_leak() {
         let mut global_ref: NonNull<u8>;
         {
-            let s_ptr: HeapContainer<u8> = HeapContainer::new(3);
-            let s_ptr_leaked = HeapContainer::leak(s_ptr);
+            let s_ptr: HeapBox<u8> = HeapBox::new(3);
+            let s_ptr_leaked = HeapBox::leak(s_ptr);
             unsafe {
                 *s_ptr_leaked.as_ptr() = 4;
                 assert_eq!(*s_ptr_leaked.as_ptr(), 4u8, "Leaked Smart Pointer is not mutable and also not trackable!");
@@ -260,13 +260,13 @@ mod heap_container {
 
     #[test]
     fn test_as_ptr() {
-        let s_ptr: HeapContainer<u8> = HeapContainer::new(10);
+        let s_ptr: HeapBox<u8> = HeapBox::new(10);
         unsafe { assert_eq!(*s_ptr.as_ptr(), 10u8, "Failed to deref return pointer!"); }
     }
 
     #[test]
     fn test_clone() {
-        let s_ptr = HeapContainer::new(10);
+        let s_ptr = HeapBox::new(10);
         let clone_s_ptr = s_ptr.clone();
         assert_ne!(s_ptr.ptr, clone_s_ptr.ptr, "Cloned pointer is the same as original one!");
         assert_eq!(*s_ptr, *clone_s_ptr, "Cloned data is different!")
@@ -274,7 +274,7 @@ mod heap_container {
 
     #[test]
     fn test_deref_mut() {
-        let mut s_ptr_mut = HeapContainer::new(10);
+        let mut s_ptr_mut = HeapBox::new(10);
         *s_ptr_mut = 20;
         assert_eq!(*s_ptr_mut, 20, "Smart pointer mutable derefencing failed!")
     }
@@ -284,57 +284,57 @@ mod heap_container {
     fn test_drop() {
         let test_data = String::from("hello");
 
-        let s_ptr = HeapContainer::new(test_data.clone());
+        let s_ptr = HeapBox::new(test_data.clone());
         assert_eq!(*s_ptr, "hello", "Smart pointer is not pointing to the correct data");
         drop(s_ptr);
     }
 }
 
-mod shared_smart_pointer {
+mod atomic_reference_counter {
     use super::*;
 
     #[test]
     fn test_new() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         assert_eq!(*shared, 1, "Invalid data found in the Shared pointer!");
         assert_eq!(shared.count(), 1usize, "Invalid reference count found in the Shared pointer!");
     }
 
     #[test]
     fn test_as_ref() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         assert_eq!(shared.as_ref().value, 1u8, "Invalid data found in the Reference Counter reference!");
     }
 
     #[test]
     fn test_as_mut() {
-        let mut shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let mut shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         assert_eq!(shared.as_mut().value, 1u8, "Invalid data found in the Reference Counter mutable reference!");
     }
 
     #[test]
     fn test_count() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         assert_eq!(shared.count(), 1usize, "Invalid count found in the Reference Counter!");
     }
 
     #[test]
     fn test_increment() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         shared.increment();
         assert_eq!(shared.count(), 2usize, "Invalid increment in the Reference Counter!");
     }
 
     #[test]
     fn test_decrement() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         shared.decrement();
         assert_eq!(shared.count(), 0usize, "Invalid decrement in the Reference Counter!");
     }
 
     #[test]
     fn test_clone() {
-        let shared: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+        let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         {
             let clone = shared.clone();
             assert_eq!(shared.count(), 2, "Invalid reference count found in the Shared pointer!");
@@ -343,13 +343,13 @@ mod shared_smart_pointer {
     }
 }
 
-mod reference_counter {
+mod atomic_reference_state {
     use std::sync::atomic::{Ordering};
     use super::*;
 
     #[test]
     fn test_new() {
-        let rc: ReferenceCounter<u8> = ReferenceCounter::new(1);
+        let rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         unsafe {
             assert_eq!((*rc.count.get()).load(Ordering::SeqCst), 1, "Invalid initial reference count!");
         }
@@ -357,7 +357,7 @@ mod reference_counter {
 
     #[test]
     fn test_increment() {
-        let mut rc: ReferenceCounter<u8> = ReferenceCounter::new(1);
+        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         rc.increment();
         unsafe {
             assert_eq!((*rc.count.get()).load(Ordering::SeqCst), 2, "Invalid incremented reference count!");
@@ -366,7 +366,7 @@ mod reference_counter {
 
     #[test]
     fn test_decrement() {
-        let mut rc: ReferenceCounter<u8> = ReferenceCounter::new(1);
+        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         rc.decrement();
         unsafe {
             assert_eq!((*rc.count.get()).load(Ordering::SeqCst), 0, "Invalid decremented reference count!");
@@ -375,7 +375,7 @@ mod reference_counter {
 
     #[test]
     fn test_count() {
-        let mut rc: ReferenceCounter<u8> = ReferenceCounter::new(1);
+        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         assert_eq!(rc.count(), 1, "Invalid reference count!");
     }
 }
