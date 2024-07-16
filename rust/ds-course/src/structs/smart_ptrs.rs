@@ -9,11 +9,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 // Imitates Box from Rust
 #[derive(Debug)]
 #[derive(PartialEq)]
-pub(crate) struct SmartPointer<T> {
+pub struct HeapContainer<T> {
     ptr: NonNull<T>
 }
 
-impl<T> SmartPointer<T> {
+impl<T> HeapContainer<T> {
     pub fn new(value: T) -> Self {
         let layout = Layout::new::<T>();
         unsafe {
@@ -28,13 +28,13 @@ impl<T> SmartPointer<T> {
         }
     }
 
-    pub fn leak(smart_ptr: SmartPointer<T>) -> NonNull<T> {
+    pub fn leak(smart_ptr: HeapContainer<T>) -> NonNull<T> {
         let ptr = NonNull::new(smart_ptr.ptr.as_ptr());
         mem::forget(smart_ptr);
         ptr.unwrap()
     }
 
-    pub fn unleak(ptr: NonNull<T>) -> SmartPointer<T> {
+    pub fn unleak(ptr: NonNull<T>) -> HeapContainer<T> {
         Self { ptr }
     }
 
@@ -43,33 +43,33 @@ impl<T> SmartPointer<T> {
     }
 }
 
-impl<T: Clone> Clone for SmartPointer<T> {
+impl<T: Clone> Clone for HeapContainer<T> {
     fn clone(&self) -> Self {
-        SmartPointer::new(self.deref().clone())
+        HeapContainer::new(self.deref().clone())
     }
 }
 
-impl<T: Display> Display for SmartPointer<T> {
+impl<T: Display> Display for HeapContainer<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ", *self)?;
         Ok(())
     }
 }
 
-impl<T> Deref for SmartPointer<T> {
+impl<T> Deref for HeapContainer<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         unsafe { self.ptr.as_ref() }
     }
 }
 
-impl<T> DerefMut for SmartPointer<T> {
+impl<T> DerefMut for HeapContainer<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { self.ptr.as_mut() }
     }
 }
 
-impl<T> Drop for SmartPointer<T> {
+impl<T> Drop for HeapContainer<T> {
     fn drop(&mut self) {
         let layout = Layout::new::<T>();
         unsafe {
@@ -133,8 +133,8 @@ pub struct SharedSmartPointer<T> {
 impl<T> SharedSmartPointer<T> {
     pub fn new(val: T) -> Self {
         let rc = ReferenceCounter::new(val);
-        let smart_ptr = SmartPointer::new(rc);
-        let leak_ptr = SmartPointer::leak(smart_ptr);
+        let smart_ptr = HeapContainer::new(rc);
+        let leak_ptr = HeapContainer::leak(smart_ptr);
         Self {
             ptr: leak_ptr
         }
@@ -205,7 +205,7 @@ impl<T> Drop for SharedSmartPointer<T> {
     fn drop(&mut self) {
         self.decrement();
         if self.count() == 0usize {
-            drop(SmartPointer::unleak(self.ptr))
+            drop(HeapContainer::unleak(self.ptr))
         }
     }
 }
@@ -233,13 +233,13 @@ impl<T> UnsafeMutable<T> {
 }
 
 #[cfg(test)]
-mod smart_pointer {
+mod heap_container {
     use std::ptr::NonNull;
-    use crate::structs::smart_ptrs::SmartPointer;
+    use crate::structs::smart_ptrs::HeapContainer;
 
     #[test]
     fn test_new() {
-        let s_ptr = SmartPointer::new(3);
+        let s_ptr = HeapContainer::new(3);
         assert_eq!(*s_ptr, 3, "Smart pointer immutable derefencing failed or diferent data is stored!");
     }
 
@@ -247,8 +247,8 @@ mod smart_pointer {
     fn test_leak() {
         let mut global_ref: NonNull<u8>;
         {
-            let s_ptr: SmartPointer<u8> = SmartPointer::new(3);
-            let s_ptr_leaked = SmartPointer::leak(s_ptr);
+            let s_ptr: HeapContainer<u8> = HeapContainer::new(3);
+            let s_ptr_leaked = HeapContainer::leak(s_ptr);
             unsafe {
                 *s_ptr_leaked.as_ptr() = 4;
                 assert_eq!(*s_ptr_leaked.as_ptr(), 4u8, "Leaked Smart Pointer is not mutable and also not trackable!");
@@ -260,13 +260,13 @@ mod smart_pointer {
 
     #[test]
     fn test_as_ptr() {
-        let s_ptr: SmartPointer<u8> = SmartPointer::new(10);
+        let s_ptr: HeapContainer<u8> = HeapContainer::new(10);
         unsafe { assert_eq!(*s_ptr.as_ptr(), 10u8, "Failed to deref return pointer!"); }
     }
 
     #[test]
     fn test_clone() {
-        let s_ptr = SmartPointer::new(10);
+        let s_ptr = HeapContainer::new(10);
         let clone_s_ptr = s_ptr.clone();
         assert_ne!(s_ptr.ptr, clone_s_ptr.ptr, "Cloned pointer is the same as original one!");
         assert_eq!(*s_ptr, *clone_s_ptr, "Cloned data is different!")
@@ -274,7 +274,7 @@ mod smart_pointer {
 
     #[test]
     fn test_deref_mut() {
-        let mut s_ptr_mut = SmartPointer::new(10);
+        let mut s_ptr_mut = HeapContainer::new(10);
         *s_ptr_mut = 20;
         assert_eq!(*s_ptr_mut, 20, "Smart pointer mutable derefencing failed!")
     }
@@ -284,7 +284,7 @@ mod smart_pointer {
     fn test_drop() {
         let test_data = String::from("hello");
 
-        let s_ptr = SmartPointer::new(test_data.clone());
+        let s_ptr = HeapContainer::new(test_data.clone());
         assert_eq!(*s_ptr, "hello", "Smart pointer is not pointing to the correct data");
         drop(s_ptr);
     }
