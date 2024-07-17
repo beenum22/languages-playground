@@ -165,8 +165,12 @@ impl<T> HeapArray<T> {
         }
     }
 
-    pub(crate) fn get_ptr(&self) -> *const T {
+    pub(crate) fn as_ptr(&self) -> *const T {
         self.ptr as *const T
+    }
+
+    pub(crate) fn as_ptr_mut(&self) -> *mut T {
+        self.ptr
     }
 
     pub(crate) fn get_len(&self) -> usize {
