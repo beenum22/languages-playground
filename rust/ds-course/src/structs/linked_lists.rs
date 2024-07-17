@@ -535,7 +535,7 @@ impl<T: Default> From<HeapArray<T>> for LinkedList<T> {
     fn from(mut value: HeapArray<T>) -> Self {
         let mut ll: LinkedList<T> = LinkedList::new();
         for _i in 0..value.get_len() {
-            ll.push_front(value.pop())
+            ll.push_front(value.pop().unwrap())
         }
         ll
     }
