@@ -132,13 +132,17 @@ impl<T> HeapArray<T> {
         self.length += 1;
     }
 
-    pub(crate) fn pop(&mut self) -> T where T: Default {
-        unsafe {
-            let data_copy = ptr::read(self.ptr.add(self.length - 1));
-            ptr::write(self.ptr.add(self.length - 1), T::default());
-            self.length -= 1;
-            data_copy
+    pub(crate) fn pop(&mut self) -> Option<T> where T: Default {
+        if self.length == 0 {
+            return None
         }
+        let data_copy;
+        unsafe {
+            data_copy = ptr::read(self.ptr.add(self.length - 1));
+            ptr::write(self.ptr.add(self.length - 1), T::default());
+        }
+        self.length -= 1;
+        Some(data_copy)
     }
 
     // Time Complexity is constant
@@ -1112,9 +1116,11 @@ mod heap_array {
                         let rnd_val_1 = rng.gen::<$type>();
                         let rnd_val_2 = rng.gen::<$type>();
                         let mut array: HeapArray<$type> = HeapArray::values(&[rnd_val_1, rnd_val_2]);
-                        array.pop();
+                        assert_eq!(array.pop(), Some(rnd_val_2), "Array pop returned invalid value!");
                         assert_eq!(format!("{}", array), format!("[{}, {}]", rnd_val_1, $type::default()), "Array is invalid after pop");
                         assert_eq!(array.length, 1, "Verifying length after push");
+                        array.pop();
+                        assert_eq!(array.pop(), None, "Empty array pop returned invalid value!");
                     }
                 }
             )*
