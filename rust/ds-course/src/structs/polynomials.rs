@@ -89,22 +89,18 @@ impl Polynomial {
 
         let mut i: usize = 0;
         let mut j: usize = 0;
-        let mut k: usize = 0;
 
         while i < self.count && j < other.count {
             if self.terms[i].exponent == other.terms[j].exponent {
                 res.set_term(self.terms[i].coefficient + other.terms[j].coefficient, self.terms[i].exponent);
                 i += 1;
                 j += 1;
-                k += 1;
             } else if self.terms[i].exponent > other.terms[i].exponent {
                 res.set_term(self.terms[i].coefficient, self.terms[i].exponent);
                 i += 1;
-                k += 1;
             } else {
                 res.set_term(other.terms[j].coefficient, other.terms[j].exponent);
                 j += 1;
-                k += 1;
             }
         }
 
@@ -153,7 +149,6 @@ mod polynomial {
         // p1(x) = 3x^2 + 4x^1 + 3x^0
         // p2(x) = 4x^3 + 2x^2 + 5x^1 + 2x^0
         // res(x) = 3x^2 + 4x^1 + 3x^0 + 4x^3 + 2x^2 + 5x^1 + 2x^0 = 4x^3 + 5x^2 + 9x^1 + 5
-        let x = 2;
         let mut p1: Polynomial = Polynomial::new(3);
         let mut p2: Polynomial = Polynomial::new(4);
         let mut res: Polynomial = Polynomial::new(4);

@@ -2,11 +2,10 @@ use crate::traits::{Random};
 
 use std::fmt::{Display};
 
-use crate::structs::matrices::{Matrix, MatrixOperations, DiagonalMatrix, LowerTriangularMatrix, UpperTraingularMatrix, TridiagonalMatrix, ToeplitzMatrix, SparseMatrix};
+use crate::structs::matrices::{Matrix};
 use crate::structs::arrays::{HeapArray};
 use crate::structs::linked_lists::LinkedList;
 use crate::structs::polynomials::Polynomial;
-use crate::structs::smart_ptrs::AtomicReferenceCounter;
 use crate::structs::strings::{HeapString};
 
 // fn adt_demo_with_arithmatic<T: >(size: usize) {

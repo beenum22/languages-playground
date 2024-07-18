@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::{Add, AddAssign, Deref};
+use std::ops::{AddAssign};
 use num::Bounded;
 use crate::structs::arrays::HeapArray;
 use crate::structs::smart_ptrs::{AtomicReferenceCounter};
@@ -292,7 +292,7 @@ impl<T> LinkedList<T> {
         let mut current = self.head_as_ref();
         for i in 0..self.length + 1 {
             if i == index {
-                let mut current_node = current.map(|node| {node.clone()});
+                let current_node = current.map(|node| {node.clone()});
                 match i == self.length {
                     false => {
                         self.insert_before_node(current_node.clone(), data);
@@ -645,7 +645,6 @@ mod node {
 
 #[cfg(test)]
 mod linked_list {
-    use std::fmt::{Display};
     use crate::structs::arrays::HeapArray;
     use crate::structs::linked_lists::{LinkedList};
 

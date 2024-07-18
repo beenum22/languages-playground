@@ -1294,7 +1294,7 @@ mod heap_array {
         let mut items: HeapArray<TestElement<u8>> = HeapArray::with_capacity(2);
         items.push(TestElement{val: 5});
         items.push(TestElement{val: 10});
-        let mut collection: TestCollection<u8> = TestCollection {
+        let collection: TestCollection<u8> = TestCollection {
             items
         };
 
