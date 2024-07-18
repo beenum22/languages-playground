@@ -1,0 +1,28 @@
+name: Rust CI
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-dsa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Navigate to Rust DSA directory
+        run: cd rust/ds-course
+
+      - name: Build DSA codebase
+        run: cargo build --workspace --all-targets
+
+      - name: Run tests for DSA codebase
+        run: cargo test --workspace --all-targets
