@@ -18,11 +18,10 @@ jobs:
           profile: minimal
           override: true
 
-      - name: Navigate to Rust DSA directory
-        run: cd rust/ds-course
-
       - name: Build DSA codebase
         run: cargo build --workspace --all-targets
+        working-directory: rust/ds-course
 
       - name: Run tests for DSA codebase
         run: cargo test --workspace --all-targets
+        working-directory: rust/ds-course
