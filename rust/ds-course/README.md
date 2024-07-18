@@ -424,3 +424,208 @@ Similarly, As(n) would be;
 ```
 As(n) = 1 + I/n = 1 + (E - 2n)/n = 1 + E/n - 2 = nlogn/n - 1 = logn - 1
 ```
+
+#### Merging Arrays
+The Big O or time complexity in case of merging is denoted by a theta:
+```
+θ(m+n)
+```
+
+## String Data Type
+
+Character Set is a set of characters that are supported by the programming language. Computer systems work on binary numbers. We define every character as a binary number/code which is standardized for every machine and system. This standard is called American Standard Code for Information Interchange (ASCII) codes. These codes are for English language specifically. For other languages, the standard that defines the codes is called Unicodes.
+```
+A -> 65
+B -> 66
+...
+Z -> 90
+
+a -> 97
+b -> 98
+...
+z -> 122
+
+0 -> 48
+1 -> 49
+...
+9 -> 57
+
+Enter -> 10
+Space -> 13
+Escape -> 27
+```
+There are total `128` codes. An ASCII code only requires `7 bits` to represent because `2^7 = 128`. This is why we say a char requires `1 Byte` in the memory.
+
+Unicodes are represented by `16 bits` as it covers extensive range of languages. Also, it's codes are written in hexadecimal. In memory, it takes `2 Bytes` for each character.
+
+Array of characters is called a string. In C, character is enclosed in single quotes and string in double quotes.
+
+### Bitwise Operations
+
+Finding out if a bit is `on` in memory or not is called **Masking**. To find out the status of a desired bit, we can have another byte with that specific bit `on` only and perform bitwise `AND` with the desired byte in memory to find its status. Similarly, setting a bit in memory is called Merging.
+
+There are three common bitwise operations:
+* Shifting - Moving bits from right to left.
+* Merging - Setting another bit on in a byte. OR operation needed
+* Masking - Finding status of a bit in a byte. AND operation needed.
+
+### Permutations of a String
+If we create a tree for the permutation, the tree itself is called State Space Tree and the paths are kind of called Back Tracking. In permutation tree, all the possible outcomes are shown and hence it is called Brute Force. The end of the tree branches are called Leaf Nodes.
+
+Any process where we have to Back Track and perform something, it can be achieved using Recursion.
+
+## Matrix
+### Square Matrix
+
+Any matrix that has n rows and n columns i.e nxn. There are different sub types of a square matrix depending on the arranging or type of values. e.g. Diagonal matrix where all elements are zero except the middle diagonal line.
+
+Diagonal Matrix: `M[i, j] = 0 if i != j`
+
+In Matrices where we have a pattern of zeroes for example Diagonal, we don't have to store these zeroes or perform operations on them as it is waste of time and space. We can rather convert them into some other form. e.g. We can convert 2D diagonal array to a 1D array.
+
+### Diagonal Matrix
+```
+M[i, j] is non-zero if i == j
+M[i, j] = 0 if i != j
+```
+
+### Lower Triangular Matrix
+```
+M[i, j] is non-zero if i >= j
+M[i, j] = 0 if i < j
+```
+
+Lower half/non-zero elements are: `n(n + 1)/2`
+
+Upper half/zero elements are: `n^2 - n(n + 1)/2 = n(n - 1)/2`
+
+We can store values both using row-major or column major methods. For row-major, we can find a value at an index: `[ i(i - 1)/2 ] + j - 1`.
+
+For column-major, we can find a value at an index: `[ n(j - 1) + (j - 2)(j - 1)/2 ] + (j - i)`
+
+### Upper Triangular Matrix
+```
+M[i, j] is non-zero if i <= j
+M[i, j] = 0 if i > j
+```
+Lower half/non-zero elements are: `n(n + 1)/2`
+
+Upper half/zero elements are: `n^2 - n(n + 1)/2 = n(n - 1)/2`
+
+We can store values both using row-major or column major methods.
+For row-major, we can find a value at an index: `[ n(i - 1) + (ji- 2)(i - 1)/2 ] + (j- i)`
+
+For column-major, we can find a value at an index: `[ j(j - 1)/2 ] + i- 1`
+
+### Symmetric Matrix
+
+When `M[i, j] == M[j, i]`
+
+In programming, we can represent it using Upper or Lower Triangular Matrix.
+
+### Tridiagonal Matrix
+
+We have three diagonal bands such that:
+Main diagonal: `i - j = 0`
+Lower diagonal: `i - j = 1`
+Upper diagonal: `i - j = -1`
+```
+|i - j| <= 1
+M[i, j] is non-zero if |i - j| <= 1
+M[i, j] = 0 if |i -j| > 1
+Total non-zero elements: n + (n - 1) + (n - 1)
+```
+We want to avoid storing zeroes, however, we can't use row-major or column-major because the elements in each row/column are non-uniform. We will go diagonal by diagonal, e.g, lower first, main then and upper. To find indexes, we can use:
+```
+if i - j = 1 then index: i - 1
+if i - j = 0 then index: n - 1 + i - 1
+if i - j = -1 then index: 2n - 1 + i - 1
+```
+
+### Square Band Matrix
+
+When there are more than one diagonals on each side and they are equal number of diagonals then it's called Square Band Matrix.
+
+### Toeplitz Matrix
+```
+M[i, j] = M[i - 1, j - 1]
+```
+Total elements: `n + n - 1`
+
+First store a row and then a column in our 1D array.
+
+Case 1: if i <= j then index = j - i   similar to our upper triangle matrix.
+
+Case 2: if i > j then index = n + i - j - 1  similar to our lower triangle matrix.
+
+### Sparse Matrix
+
+A matrix where there are more zero elements.
+
+There are two ways to implement such matrices:
+* Co-ordinate List / 3-column Representation
+* Compressed Sparse Row
+
+#### For 3-column Representation
+We need 3 values; row, col and val that will form a tuple. We will have an array of tuples. First index will have a tuple with total rows, cols and elements.
+
+#### Compressed Sparse Row
+In this method, we first create an array and store all the non-zero values and then we initialize another array and go over our matrix row by row and count the number of non-zero elements appearing. We store a 0 at index 0 to represent the 0,0 index of a matrix(which doesn't exist) and then we move downwards counting the elements appearing and storing the accumulated value for each row in a separate index in our initialized array. Then we initialize another/third array, go over our first array of elements and store column numbers of each element in our new array.
+
+#### Sparse Matrix Addition
+For adding any matrices, the dimensions must be same.
+
+Addition using Co-ordinate List:
+
+## Polynomial
+
+Polynomial are represented on paper using a single line formulas such as:
+```
+p(x) = 3x^5 + 2x^4 + 2x + 7
+```
+
+The above formula uses a single variable and is called a Univariate Formulas.
+
+In programming, we can represent this polynomial using an array where we keep track of co-efficient and exponent of each term.
+
+## Linked Lists
+
+Arrays have a problem that we always have to set the size of it whether it is in Stack or Heap. Array have a fixed size. In cases where we don't know the number of elements, the size of the array would be either insufficient or excess.
+
+We can use linked list for such cases. A linked list is a chain of nodes connected to each other using pointers. Every node has a value and a pointer to the next node. This node is created in Heap. Disadvantage here is that memory is not contiguous like arrays.
+
+We always create linked lists in Heap memory as Stack allocation is not suitable for dynamic memory allocation.
+
+First node in a list is called a Head and is pointing to the first data node. Rest of the nodes are called Data Nodes or just Nodes. The pointer in nodes of type Node.
+
+A structure/struct that points to structs of the same type are called self-referential structures.
+
+In C++, Class and Struct is the same but everything in a Class is private by default and in a Struct is public.
+
+Size in memory for Node struct is data Datatype Bytes plus next Pointer Bytes. e.g. if data is int, the struct will take 2+2=4 Bytes.
+
+In a compiler if Integer takes 2 Bytes, Pointer will also take 2 Bytes and if Integer takes 4 Bytes, Pointer will also take 4 Bytes.
+
+If we display node values using Loops or Recursion, both the Time and Space complexities will be `O(n)`.
+
+Using Recursion if we call first and then print, the Linked List will be printed in reverse order.
+
+### Linked Lists Search
+
+We can search through the list using two methods; Linear and Binary. Binary works only on a sorted items. We saw in Arrays that the Binary search improves Time complexity, however, that's not the case here. We don't know the middle of the Linked List so we always have to traverse to find the middle which make it as efficient as Linear search only. So in case of Linked Lists, we don't use Binary search.
+
+We can improve the Linear search with Move To Head search though.
+
+### Linked List Insert
+
+Linked Lists don't have indices like Arrays so we have to assume that every Node has an index starting from 0 or 1. We can further divide insertion into two types; Insert Before first and Insert after given position.
+
+## Stack
+
+ADT Stack Data Structure follows LIFO (Last-in First-out) pattern.
+
+We are used to such a data structure that we know as Stack already (in terms of memory).
+
+One example of Stack use-case is when you want to convert a Recursive approach to Iterative approach.
+
+P.S. ADT means representation and operations on certain data.
