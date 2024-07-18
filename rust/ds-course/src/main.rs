@@ -8,10 +8,10 @@ use std::error::Error;
 // use std::io::{Write};
 // use std::ptr::hash;
 // use console_menu::{Menu, MenuOption, MenuProps};
-use terminal_menu::{menu, label, button, run, mut_menu, submenu, activate, scroll, back_button};
-use dialoguer::{Input, Select};
-use crate::structs::arrays::HeapArray;
-use crate::structs::linked_lists::LinkedList;
+// use terminal_menu::{menu, label, button, run, mut_menu, submenu, activate, scroll, back_button};
+// use dialoguer::{Input, Select};
+// use crate::structs::arrays::HeapArray;
+// use crate::structs::linked_lists::LinkedList;
 // use crate::MenuConfig::MenuConfig;
 // use crate::MenuParam::Menu;
 // use crate::structs::MyArray;
@@ -22,7 +22,7 @@ use crate::structs::linked_lists::LinkedList;
 
 mod adt;
 mod traits;
-mod menu;
+// mod menu;
 
 mod structs {
     pub mod matrices;
