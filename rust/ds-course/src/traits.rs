@@ -1,8 +1,4 @@
-use std::fmt::{Display, format};
-use std::{mem, ptr};
-use std::mem::discriminant;
 use rand::Rng;
-use crate::structs::MyArray;
 
 // Trait to generate random value for the specified data type in <T>
 pub(crate) trait Random {
