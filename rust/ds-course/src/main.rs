@@ -2,12 +2,16 @@ extern crate core;
 
 // use std::collections::HashMap;
 use std::error::Error;
+// use crate::menu::menu;
 // use std::fmt::format;
 // use std::io;
 // use std::io::{Write};
 // use std::ptr::hash;
 // use console_menu::{Menu, MenuOption, MenuProps};
-// use terminal_menu::{menu, label, button, run, mut_menu, submenu, activate};
+use terminal_menu::{menu, label, button, run, mut_menu, submenu, activate, scroll, back_button};
+use dialoguer::{Input, Select};
+use crate::structs::arrays::HeapArray;
+use crate::structs::linked_lists::LinkedList;
 // use crate::MenuConfig::MenuConfig;
 // use crate::MenuParam::Menu;
 // use crate::structs::MyArray;
@@ -15,8 +19,10 @@ use std::error::Error;
 // Use Rc to avoid moving errors with references
 // use std::rc::Rc;
 
+
 mod adt;
 mod traits;
+mod menu;
 
 mod structs {
     pub mod matrices;
@@ -26,6 +32,7 @@ mod structs {
     pub mod linked_lists;
     pub mod smart_ptrs;
     pub mod iterators;
+    pub mod stacks;
 }
 
 
@@ -213,7 +220,9 @@ mod structs {
 fn main() -> Result<(), Box<dyn Error>>{
     // let foo: u16 = 10;
     // reference_dereference(10);
-    adt::adt_demo::<char>(10)?;
+    // adt::adt_demo::<char>(10)?;
     adt::adt_demo::<u8>(10)?;
+    // menu::root();
+
     Ok(())
 }
