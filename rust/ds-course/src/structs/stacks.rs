@@ -10,7 +10,7 @@ pub struct Stack<T> {
 
 impl<T> Stack<T> {
     pub fn new(size: usize) -> Self {
-        let mut arr = HeapArray::with_capacity(size);
+        let arr = HeapArray::with_capacity(size);
         Self {
             top: NonNull::new(arr.as_ptr_mut()).unwrap(),
             size,

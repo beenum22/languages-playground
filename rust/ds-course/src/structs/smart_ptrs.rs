@@ -245,7 +245,7 @@ mod heap_box {
 
     #[test]
     fn test_leak() {
-        let mut global_ref: NonNull<u8>;
+        let global_ref: NonNull<u8>;
         {
             let s_ptr: HeapBox<u8> = HeapBox::new(3);
             let s_ptr_leaked = HeapBox::leak(s_ptr);
@@ -336,8 +336,7 @@ mod atomic_reference_counter {
     fn test_clone() {
         let shared: AtomicReferenceCounter<u8> = AtomicReferenceCounter::new(1);
         {
-            let clone = shared.clone();
-            assert_eq!(shared.count(), 2, "Invalid reference count found in the Shared pointer!");
+            assert_eq!(shared.clone().count(), 2, "Invalid reference count found in the Shared pointer!");
         }
         assert_eq!(shared.count(), 1, "Invalid reference count found in the Shared pointer!");
     }
@@ -357,7 +356,7 @@ mod atomic_reference_state {
 
     #[test]
     fn test_increment() {
-        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
+        let rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         rc.increment();
         unsafe {
             assert_eq!((*rc.count.get()).load(Ordering::SeqCst), 2, "Invalid incremented reference count!");
@@ -366,7 +365,7 @@ mod atomic_reference_state {
 
     #[test]
     fn test_decrement() {
-        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
+        let rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         rc.decrement();
         unsafe {
             assert_eq!((*rc.count.get()).load(Ordering::SeqCst), 0, "Invalid decremented reference count!");
@@ -375,7 +374,7 @@ mod atomic_reference_state {
 
     #[test]
     fn test_count() {
-        let mut rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
+        let rc: AtomicReferenceState<u8> = AtomicReferenceState::new(1);
         assert_eq!(rc.count(), 1, "Invalid reference count!");
     }
 }
