@@ -1,12 +1,12 @@
 use crate::traits::{Random};
 
 use std::fmt::{Display};
-use std::time::Instant;
 
-use crate::structs::matrices::{Matrix, MatrixOperations, DiagonalMatrix, LowerTriangularMatrix, UpperTraingularMatrix, TridiagonalMatrix, ToeplitzMatrix};
+use crate::structs::matrices::{Matrix, MatrixOperations, DiagonalMatrix, LowerTriangularMatrix, UpperTraingularMatrix, TridiagonalMatrix, ToeplitzMatrix, SparseMatrix};
 use crate::structs::arrays::{HeapArray};
 use crate::structs::linked_lists::LinkedList;
 use crate::structs::polynomials::Polynomial;
+use crate::structs::smart_ptrs::AtomicReferenceCounter;
 use crate::structs::strings::{HeapString};
 
 // fn adt_demo_with_arithmatic<T: >(size: usize) {
@@ -26,7 +26,7 @@ fn adt_demo_search<T: Default + Random + PartialEq + Display + PartialOrd + Copy
     }
     println!("---");
     println!("Performing Recursive Binary Search on the array");
-    match array.recursive_binary_search(0, array.length as isize - 1, target_value) {
+    match array.recursive_binary_search(0, array.get_len() as isize - 1, target_value) {
         None => println!("Failed to find value={} using Recursive Binary search in the array", target_value),
         Some(val) => println!("Value={} is found at index={} using Recursive Binary search", target_value, val),
     }
@@ -55,18 +55,6 @@ fn adt_demo_search<T: Default + Random + PartialEq + Display + PartialOrd + Copy
 //     println!("---");
 //     Ok(())
 // }
-
-
-// Wrapper function to measure execution time
-fn measure_time<F, R>(func: F) -> (R, std::time::Duration)
-    where
-        F: FnOnce() -> R,
-{
-    let start = Instant::now();
-    let result = func();
-    let duration = start.elapsed();
-    (result, duration)
-}
 
 pub(crate) fn adt_demo<T: Default + Random + PartialEq + Display + PartialOrd + Copy >(size: usize) -> Result<HeapArray<T>, &'static str> {
     let mut array: HeapArray<T> = HeapArray::with_capacity(size);
@@ -122,7 +110,7 @@ pub(crate) fn adt_demo<T: Default + Random + PartialEq + Display + PartialOrd + 
     println!("Merged Array={array}");
     println!("---");
 
-    let new_size: usize = array.length + 10;
+    let new_size: usize = array.get_len() + 10;
     println!("Resize the Array to size={}", new_size);
     array.resize(new_size)?;
     println!("{array}");
@@ -192,12 +180,13 @@ pub(crate) fn adt_demo<T: Default + Random + PartialEq + Display + PartialOrd + 
     println!("Bytes={:?}", gen_perm_arr.as_bytes());
     println!("Bytes={:?}", ref_perm_arr.as_bytes());
 
-    let mut matrix: Matrix<u8> = Matrix::new_upper_triangular(5, 5);
-    for i in 1..6 {
-        for j in 1..6 {
-            matrix.set(i, j, u8::random())
-        }
-    }
+    let mut matrix: Matrix<u8> = Matrix::new_sparse(5, 5);
+    matrix.set(1, 2, u8::random());
+    matrix.set(1, 3, u8::random());
+    matrix.set(2, 1, u8::random());
+    matrix.set(3, 5, u8::random());
+    matrix.set(2, 5, u8::random());
+
     // println!("{}", matrix);
     println!("{}", matrix);
 
@@ -207,13 +196,23 @@ pub(crate) fn adt_demo<T: Default + Random + PartialEq + Display + PartialOrd + 
     p.set_term(-2, 0);
     println!("{}", p);
 
-    let mut ll: LinkedList<u8> = LinkedList::new();
-    ll.push_front(1);
-    ll.push_front(2);
-    ll.push_front(3);
-    ll.push_front(4);
+    {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.push_front(1);
+        ll.push_front(2);
+        ll.push_front(3);
+        ll.push_front(4);
 
-    println!("LL: {:?}", ll);
+        println!("LL: {:?}", ll);
+    }
+
+    // ll.move_to_head_search(1);
+    // println!("LL: {}", ll);
+
+    // {
+    //     let shared_ptr: SharedSmartPointer<u8> = SharedSmartPointer::new(1);
+    //     let _cloned_shared_ptr = shared_ptr.clone();
+    // }
 
     Ok(array)
 }
