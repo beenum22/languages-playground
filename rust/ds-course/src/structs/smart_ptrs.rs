@@ -14,6 +14,7 @@ pub struct HeapBox<T> {
 }
 
 impl<T> HeapBox<T> {
+    // TODO: Add error handling when it is unable to allocate. It would be needed in Linked List and later Stack full errors.
     pub fn new(value: T) -> Self {
         let layout = Layout::new::<T>();
         unsafe {
