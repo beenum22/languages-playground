@@ -83,12 +83,14 @@ impl<T> DynamicStack<T> {
         }
     }
 
+    // Time Complexity is O(1)
     pub fn push(&mut self, data: T) {
         self.data.push_front(data);
         self.length += 1;
         self.top = Some(self.data.head_as_ref().unwrap().clone());
     }
 
+    // Time Complexity is O(1)
     pub fn pop(&mut self) -> Option<T> where T: Copy {
         if self.length == 0 {
             return None
@@ -99,8 +101,9 @@ impl<T> DynamicStack<T> {
         Some(data)
     }
 
-    pub fn peek(&self) -> Option<&T> {
-        self.data.peek()
+    // Time Complexity is min: O(1), max: O(n)
+    pub fn peek(&self, index: usize) -> Option<&T> {
+        Some(self.data.peek(index).expect("Index out of boundsssssss!"))
     }
 
     pub fn get_top(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
@@ -202,7 +205,6 @@ mod dynamic_stack {
         assert_eq!(stack.top, None, "Stack top pointer is invalid!");
         assert_eq!(stack.length, 0, "Stack length is invalid!");
         assert_eq!(format!("{}", stack.data), "None".to_string(), "Stack array is invalid!");
-        // assert(stack.data, "Stack array is invalid!");
     }
 
     #[test]
@@ -231,7 +233,8 @@ mod dynamic_stack {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.peek(), Some(&2u8), "Stack peek value is invalid!");
+        assert_eq!(stack.peek(0), Some(&2u8), "Stack peek value at index 0 is invalid!");
+        assert_eq!(stack.peek(2), Some(&1u8), "Stack peek value at index 1 is invalid!");
     }
 
     #[test]
