@@ -104,16 +104,38 @@ impl<T> LinkedList<T> {
         self.tail.as_mut()
     }
 
-    pub fn peek(&self) -> Option<&T> {
-        return self.head_as_ref().map(|node| {
-            &node.data
-        })
+    pub fn peek(&self, index: usize) -> Option<&T> {
+        if index >= self.length {
+            panic!("Index out of bounds!");
+        }
+        let len = self.length;
+        let mut current = self.head_as_ref();
+        for i in 0..len {
+            if i == index {
+                return current.map(|node| {
+                    &node.data
+                })
+            }
+            current = current.unwrap().next_as_ref();
+        }
+        None
     }
 
-    pub fn peek_mut(&mut self) -> Option<&mut T> {
-        return self.head_as_mut().map(|node| {
-            &mut node.data
-        })
+    pub fn peek_mut(&mut self, index: usize) -> Option<&mut T> {
+        if index >= self.length {
+            panic!("Index out of bounds!");
+        }
+        let len = self.length;
+        let mut current = self.head_as_mut();
+        for i in 0..len {
+            if i == index {
+                return current.map(|node| {
+                    &mut node.data
+                })
+            }
+            current = current.unwrap().next_as_mut();
+        }
+        None
     }
 
     pub fn len(&self) -> usize {
@@ -964,14 +986,29 @@ mod linked_list {
         let mut ll: LinkedList<u8> = LinkedList::new();
         ll.push_front(5);
         ll.push_front(10);
-        assert_eq!(ll.peek(), Some(&(10u8)), "Linked List invalid head value!");
+        assert_eq!(ll.peek(0), Some(&(10u8)), "Linked List invalid value at 0 index!");
+        assert_eq!(ll.peek(1), Some(&(5u8)), "Linked List invalid value at 1 index!");
+    }
+
+    #[test]
+    #[should_panic(expected = "Index out of bounds!")]
+    fn test_peek_panic() {
+        let ll: LinkedList<u8> = LinkedList::new();
+        ll.peek(0);
     }
 
     #[test]
     fn test_peek_mut() {
         let mut ll: LinkedList<u8> = LinkedList::new();
         ll.push_front(10);
-        assert_eq!(ll.peek_mut(), Some(&mut 10u8), "Linked List invalid head value!");
+        assert_eq!(ll.peek_mut(0), Some(&mut 10u8), "Linked List invalid head value!");
+    }
+
+    #[test]
+    #[should_panic(expected = "Index out of bounds!")]
+    fn test_peek_mut_panic() {
+        let mut ll: LinkedList<u8> = LinkedList::new();
+        ll.peek_mut(0);
     }
 
     #[test]
