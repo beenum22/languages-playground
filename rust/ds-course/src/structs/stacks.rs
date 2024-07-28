@@ -33,18 +33,25 @@ impl<T> Stack<T> {
         self.top = NonNull::new(ptr).unwrap();
     }
 
-    pub fn pop(&mut self) -> Option<T> where T: Default {
+    pub fn pop(&mut self) -> Option<T> {
         if self.length == 0 {
             return None
         }
         let data = self.data.pop().unwrap();
         self.length -= 1;
-        let ptr = unsafe { self.data.as_ptr_mut().add(self.data.get_len() - 1) };
+        let ptr = unsafe { self.data.as_ptr_mut().add(self.data.get_len()) };
         self.top = NonNull::new(ptr).unwrap();
         Some(data)
     }
 
-    pub fn peek(&self, index: usize) -> &T {
+    pub fn peek(&self) -> Option<&T> {
+        if self.length == 0 {
+            return None
+        }
+        Some(self.data.get(self.data.get_len() - 1))
+    }
+
+    pub fn get(&self, index: usize) -> &T {
         self.data.get(index)
     }
 
@@ -101,9 +108,10 @@ impl<T> DynamicStack<T> {
         Some(data)
     }
 
+    // TODO: Use to get top value only and have separate method for get with index.
     // Time Complexity is min: O(1), max: O(n)
     pub fn peek(&self, index: usize) -> Option<&T> {
-        Some(self.data.peek(index).expect("Index out of boundsssssss!"))
+        Some(self.data.peek(index).expect("Index out of bounds!"))
     }
 
     pub fn get_top(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
@@ -147,7 +155,9 @@ mod stack {
         assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut()).unwrap(), "Stack top pointer is invalid!");
         assert_eq!(stack.size, 5, "Stack size is invalid!");
         assert_eq!(stack.length, 1, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "[1, 0, 0, 0, 0]".to_string(), "Stack array is invalid!");
+        assert_eq!(format!("{}", stack.data), "[1]".to_string(), "Stack array is invalid!");
+        stack.push(2);
+        assert_eq!(format!("{}", stack.data), "[1, 2]".to_string(), "Stack array is invalid!");
     }
 
     #[test]
@@ -156,18 +166,33 @@ mod stack {
         assert_eq!(stack.pop(), None, "Empty stack pop value is invalid!");
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.pop(), Some(2), "Stack pop value is invalid!");
+        stack.push(3);
+        assert_eq!(stack.pop(), Some(3), "Stack pop value is invalid!");
+        unsafe { assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut().add(2)).unwrap(), "Stack top pointer is invalid!"); }
+        assert_eq!(stack.length, 2, "Stack length is invalid!");
+        assert_eq!(format!("{}", stack.data), "[1, 2]".to_string(), "Stack array is invalid!");
+        stack.pop();
+        stack.pop();
+        assert_eq!(stack.pop(), None, "Stack pop value is invalid!");
+        assert_eq!(stack.length, 0, "Stack length is invalid!");
         assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut()).unwrap(), "Stack top pointer is invalid!");
-        assert_eq!(stack.length, 1, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "[1, 0, 0, 0, 0]".to_string(), "Stack array is invalid!");
     }
 
     #[test]
     fn test_peek() {
         let mut stack: Stack<u8> = Stack::new(5);
+        assert_eq!(stack.peek(), None, "Stack peek value is invalid!");
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.peek(1), &2, "Stack peek value at the index is invalid!");
+        assert_eq!(stack.peek(), Some(&2), "Stack peek value is invalid!");
+    }
+
+    #[test]
+    fn test_get() {
+        let mut stack: Stack<u8> = Stack::new(5);
+        stack.push(1);
+        stack.push(2);
+        assert_eq!(stack.get(1), &2, "Stack get value at the index is invalid!");
     }
 
     #[test]
@@ -234,7 +259,7 @@ mod dynamic_stack {
         stack.push(1);
         stack.push(2);
         assert_eq!(stack.peek(0), Some(&2u8), "Stack peek value at index 0 is invalid!");
-        assert_eq!(stack.peek(2), Some(&1u8), "Stack peek value at index 1 is invalid!");
+        assert_eq!(stack.peek(1), Some(&1u8), "Stack peek value at index 1 is invalid!");
     }
 
     #[test]
