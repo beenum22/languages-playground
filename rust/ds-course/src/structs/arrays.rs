@@ -132,17 +132,14 @@ impl<T> HeapArray<T> {
         self.length += 1;
     }
 
-    pub(crate) fn pop(&mut self) -> Option<T> where T: Default {
+    pub fn pop(&mut self) -> Option<T> {
         if self.length == 0 {
             return None
         }
-        let data_copy;
-        unsafe {
-            data_copy = ptr::read(self.ptr.add(self.length - 1));
-            ptr::write(self.ptr.add(self.length - 1), T::default());
-        }
         self.length -= 1;
-        Some(data_copy)
+        unsafe {
+            Some(ptr::read(self.ptr.add(self.length)))
+        }
     }
 
     // Time Complexity is constant
@@ -610,7 +607,7 @@ impl<T> HeapArray<T> {
     }
 
     // Time complexity is O(n)
-    pub(crate) fn left_shift(&mut self) -> ()
+    pub fn left_shift(&mut self) -> ()
         where T: Copy
     {
         let temp_val = self[0];
@@ -720,7 +717,7 @@ impl<T: Clone > Clone for HeapArray<T> {
 impl<T: Display> Display for HeapArray<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
-        for i in 0..self.size {
+        for i in 0..self.length {
             if i > 0 {
                 write!(f, ", ")?;
             }
@@ -733,14 +730,14 @@ impl<T: Display> Display for HeapArray<T> {
     }
 }
 
-impl<T: Debug + Display> Debug for HeapArray<T> {
+impl<T: Debug> Debug for HeapArray<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
         for i in 0..self.size {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            write!(f, "{}", &self.get(i))?;
+            write!(f, "{:?}", &self.get(i))?;
         }
         write!(f, "]")?;
         Ok(())
@@ -761,7 +758,7 @@ impl<T: PartialEq> PartialEq for HeapArray<T> {
     }
 
     fn ne(&self, other: &Self) -> bool {
-        if self.as_bytes() == other.as_bytes(){
+        if self.as_bytes() != other.as_bytes() {
             return true
         }
         return false
@@ -962,6 +959,35 @@ mod heap_array {
         };
     }
 
+    macro_rules! define_test_with_capacity {
+        ($($struct:ident<$type:ty>),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_with_capacity_ $struct:snake _$type>]() {
+                        let array: HeapArray<$struct<$type>> = HeapArray::with_capacity(5);
+                        assert!(!array.ptr.is_null(), "Array pointer must not be null!");
+                        assert_eq!(array.size, 5);
+                        assert_eq!(array.length, 0);
+                    }
+                }
+            )*
+        };
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_with_capacity_$type:snake>]() {
+                        let array: HeapArray<$type> = HeapArray::with_capacity(5);
+                        assert!(!array.ptr.is_null(), "Array pointer must not be null!");
+                        assert_eq!(array.size, 5);
+                        assert_eq!(array.length, 0);
+                    }
+                }
+            )*
+        };
+    }
+
     macro_rules! define_test_iterator {
         ($($struct:ident<$type:ty>),*) => {
             $(
@@ -1001,35 +1027,6 @@ mod heap_array {
                         assert_eq!(iterator.next().unwrap(), &val_1, "The iterator did not return the expected sequence.");
                         assert_eq!(iterator.next().unwrap(), &val_2, "The iterator did not return the expected sequence.");
                         assert_eq!(iterator.next(), None, "The iterator did not return the expected sequence.");
-                    }
-                }
-            )*
-        };
-    }
-
-    macro_rules! define_test_with_capacity {
-        ($($struct:ident<$type:ty>),*) => {
-            $(
-                paste! {
-                    #[test]
-                    fn [<test_with_capacity_ $struct:snake _$type>]() {
-                        let array: HeapArray<$struct<$type>> = HeapArray::with_capacity(5);
-                        assert!(!array.ptr.is_null(), "Array pointer must be null!");
-                        assert_eq!(array.size, 5);
-                        assert_eq!(array.length, 0);
-                    }
-                }
-            )*
-        };
-        ($($type:ty),*) => {
-            $(
-                paste! {
-                    #[test]
-                    fn [<test_with_capacity_$type:snake>]() {
-                        let array: HeapArray<$type> = HeapArray::with_capacity(5);
-                        assert!(!array.ptr.is_null(), "Array pointer must be null!");
-                        assert_eq!(array.size, 5);
-                        assert_eq!(array.length, 0);
                     }
                 }
             )*
@@ -1121,7 +1118,7 @@ mod heap_array {
                         let rnd_val_2 = rng.gen::<$type>();
                         let mut array: HeapArray<$type> = HeapArray::values(&[rnd_val_1, rnd_val_2]);
                         assert_eq!(array.pop(), Some(rnd_val_2), "Array pop returned invalid value!");
-                        assert_eq!(format!("{}", array), format!("[{}, {}]", rnd_val_1, $type::default()), "Array is invalid after pop");
+                        assert_eq!(format!("{}", array), format!("[{}]", rnd_val_1), "Array is invalid after pop");
                         assert_eq!(array.length, 1, "Verifying length after push");
                         array.pop();
                         assert_eq!(array.pop(), None, "Empty array pop returned invalid value!");
@@ -1280,6 +1277,46 @@ mod heap_array {
         };
     }
 
+    macro_rules! define_test_swap_reverse {
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_swap_reverse_$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let array_val_1: $type = rng.gen::<$type>();
+                        let array_val_2: $type = rng.gen::<$type>();
+                        let array_val_3: $type = rng.gen::<$type>();
+                        let array_val_4: $type = rng.gen::<$type>();
+                        let mut array: HeapArray<$type> = HeapArray::values(&[array_val_1, array_val_2, array_val_3, array_val_4]);
+                        array.swap_reverse();
+                        assert_eq!(format!("{}", array), format!("[{}, {}, {}, {}]", array_val_4, array_val_3, array_val_2, array_val_1), "Array swap reverse didn't generate a valid array!");
+                    }
+                }
+            )*
+        };
+    }
+
+    macro_rules! define_test_left_shift {
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_left_shift_$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let array_val_1: $type = rng.gen::<$type>();
+                        let array_val_2: $type = rng.gen::<$type>();
+                        let array_val_3: $type = rng.gen::<$type>();
+                        let array_val_4: $type = rng.gen::<$type>();
+                        let mut array: HeapArray<$type> = HeapArray::values(&[array_val_1, array_val_2, array_val_3, array_val_4]);
+                        array.left_shift();
+                        assert_eq!(format!("{}", array), format!("[{}, {}, {}, {}]", array_val_2, array_val_3, array_val_4, array_val_1), "Array left shift didn't generate a valid array!");
+                    }
+                }
+            )*
+        };
+    }
+
     #[test]
     fn test_iterator_structs() {
         #[derive(Debug)]
@@ -1335,5 +1372,6 @@ mod heap_array {
     define_test_sorted_intersection!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_sorted_union!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_sorted_merge!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_swap_reverse!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_left_shift!(char, usize, isize, i8, i64, u8, u64, f32, f64);
 }
-
