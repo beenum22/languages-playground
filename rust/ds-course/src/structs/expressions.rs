@@ -44,7 +44,7 @@ impl Expression {
                     while !stack.is_empty() && operator.precedence() <= stack.peek().unwrap().precedence() {
                         if operator.precedence() == stack.peek().unwrap().precedence() &&
                             operator.associativity() == Associativity::Right {
-                            postfix.push(operator.to_char().unwrap());
+                            stack.push(token);
                             break
                         } else {
                             postfix.push(stack.pop().unwrap().to_char().unwrap());
@@ -82,6 +82,33 @@ impl Expression {
         }
         self.postfix.as_ref().unwrap().as_str()
     }
+
+
+    pub fn evaluate(&mut self) -> u32 {
+        if self.postfix.is_none() {
+            self.infix_to_postfix();
+            println!("{}", self.postfix.as_ref().unwrap());
+        }
+        let mut stack: Stack<Token> = Stack::new(self.postfix.as_ref().unwrap().len());
+        let tokens: HeapArray<Token> = Token::tokenize(self.postfix.as_ref().unwrap());
+        let out: u32 = 0;
+        for &token in &tokens {
+            match token {
+                Token::Digit(d) => stack.push(token),
+                Token::Number(d) => stack.push(token),
+                Token::Operator(op) => {
+                    let x2 = stack.pop().unwrap();
+                    let x1 = stack.pop().unwrap();
+                    stack.push(Token::evaluate(x1, x2, token));
+                }
+                _ => {}
+            }
+        }
+        match stack.pop() {
+            Some(Token::Number(n)) => n,
+            _ => 0
+        }
+    }
 }
 
 #[cfg(test)]
@@ -110,11 +137,17 @@ mod expression {
         assert_eq!(Expression::new("a + b").get_postfix(), "a  b+".to_string(), "Postfix representation is invalid for the 'a + b' expression!");
         assert_eq!(Expression::new("a+b*a-b").get_postfix(), "aba*+b-".to_string(), "Postfix representation is invalid for the 'a+b*a-b' expression!");
         assert_eq!(Expression::new("a + b * a - b").get_postfix(), "a  b  a *+ b-".to_string(), "Postfix representation is invalid for the 'a + b * a - b' expression!");
-        assert_eq!(Expression::new("a+b^c^d+e").get_postfix(), "abc^d^+e+".to_string(), "Postfix representation is invalid for the 'a+b^c^d+e' expression!");
+        assert_eq!(Expression::new("a+b^c^d+e").get_postfix(), "abcd^^+e+".to_string(), "Postfix representation is invalid for the 'a+b^c^d+e' expression!");
         assert_eq!(Expression::new("(a+b)*(a-b)").get_postfix(), "ab+ab-*".to_string(), "Postfix representation is invalid for the '(a+b)*(a-b)' expression!");
         assert_eq!(Expression::new("(a + b) * (a - b)").get_postfix(), "a  b+  a  b-*".to_string(), "Postfix representation is invalid for the '(a + b) * (a - b)' expression!");
         assert_eq!(Expression::new("a^x+b^x+x*a*b").get_postfix(), "ax^bx^+xa*b*+".to_string(), "Postfix representation is invalid for the 'a^x+b^x+x*a*b' expression!");
-        // assert_eq!(Expression::new("a^2+b^2+2*a*b").get_postfix(), "a2^b2^+2a*b*+".to_string(), "Postfix representation is invalid for the 'a^2+b^2+2*a*b' expression!");
-        // assert_eq!(Expression::new("(a + b) * (a - b)").get_postfix(), "a  b+  a  b-*".to_string(), "Postfix representation is invalid for the '(a + b) * (a - b)' expression!");
+        assert_eq!(Expression::new("(a+b)*c-d^e^f").get_postfix(), "ab+c*def^^-".to_string(), "Postfix representation is invalid for the '(a+b)*c-d^e^f' expression!");
+        assert_eq!(Expression::new("a^2+b^2+2*a*b").get_postfix(), "a2^b2^+2a*b*+".to_string(), "Postfix representation is invalid for the 'a^2+b^2+2*a*b' expression!");
+        assert_eq!(Expression::new("(a + b) * (a - b)").get_postfix(), "a  b+  a  b-*".to_string(), "Postfix representation is invalid for the '(a + b) * (a - b)' expression!");
+    }
+
+    #[test]
+    fn test_evaluate() {
+        assert_eq!(Expression::new("3*5+6/2-4").evaluate(), 14, "Expression evaluation for '3*5+6/2-4' is invalid!");
     }
 }

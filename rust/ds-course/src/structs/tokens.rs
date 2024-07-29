@@ -68,7 +68,7 @@ impl Operator {
         }
     }
 
-    pub(crate) fn associativity(&self) -> Associativity {
+    pub fn associativity(&self) -> Associativity {
         match self {
             Operator::Plus => Associativity::Left,
             Operator::Minus => Associativity::Left,
@@ -82,7 +82,7 @@ impl Operator {
         }
     }
 
-    pub(crate) fn precedence(&self) -> usize {
+    pub fn precedence(&self) -> usize {
         match self {
             Operator::Plus => 1,
             Operator::Minus => 1,
@@ -94,6 +94,19 @@ impl Operator {
             Operator::Deref => 4,
             Operator::Unknown => 100,
         }
+    }
+
+    pub fn evaluate(&self, x1: u32, x2: u32) -> u32 {
+        // NOTE: Maybe later you would have to do byte operations to simulate arithmetic operations from scratch
+        match self {
+            Self::Plus => x1 + x2,
+            Self::Minus => x1 - x2,
+            Self::Multiply => x1 * x2,
+            Self::Divide => x1 / x2,
+            Self::Exponent => x1.pow(x2),
+            _ => 0u32
+        }
+
     }
 }
 
@@ -146,8 +159,8 @@ pub enum Token {
     // Identifier(HeapString),
     Letter(char),
     Digit(u8),
+    Number(u32),  //TODO: Figure out if it should be i32 and how to handle negative values?
     Operator(Operator),
-    // Number(u8),
     Punctuation(Punctuation),
     Whitespace,
     Unknown(char),
@@ -157,54 +170,68 @@ impl Token {
     pub fn tokenize(expression: &HeapString) -> HeapArray<Self> {
         let mut tokens: HeapArray<Self> = HeapArray::with_capacity(expression.len());
         for &c in expression.iter() {
-            tokens.push(Token::from(c as char));
+            tokens.push(Self::from(c as char));
         }
         tokens
     }
 
     pub fn to_char(&self) -> Option<char> {
-        // let foo = self.deref().;
-        // self.deref().to_char()
         match self {
-            Token::Letter(c) => Some(*c),
-            Token::Digit(d) => Some((*d).into()),
-            Token::Operator(op) => op.to_char(),
-            Token::Punctuation(punc) => punc.to_char(),
-            Token::Whitespace => Some(' '),
-            // Operator::Plus => Some('+'),
-            // Operator::Minus => Some('-'),
-            // Operator::Multiply => Some('*'),
-            // Operator::Deref => Some('*'),
-            // Operator::Divide => Some('/'),
-            // Operator::Exponent => Some('^'),
-            // Operator::Negate => Some('-'),
-            // Operator::Factorial => Some('!'),
+            Self::Letter(c) => Some(*c),
+            Self::Digit(d) => Some((d + b'0') as char),
+            Self::Operator(op) => op.to_char(),
+            Self::Punctuation(punc) => punc.to_char(),
+            Self::Whitespace => Some(' '),
             _ => None
         }
     }
 
     pub fn precedence(&self) -> usize {
         match self {
-            Token::Letter(c) => 100,
-            Token::Digit(d) => 100,
-            Token::Operator(op) => op.precedence(),
-            Token::Punctuation(punc) => punc.precedence(),
-            Token::Whitespace => 100,
+            Self::Letter(c) => 100,
+            Self::Digit(d) => 100,
+            Self::Operator(op) => op.precedence(),
+            Self::Punctuation(punc) => punc.precedence(),
+            Self::Whitespace => 100,
             _ => 100
         }
+    }
+
+    pub fn evaluate(x1: Token, x2: Token, operator: Token) -> Token {
+        let out = match operator {
+            Self::Operator(op) => {
+                let x1_val: u32 = match x1 {
+                    Self::Digit(val) => val as u32,
+                    Self::Number(val) => val,
+                    _ => 0u32
+                };
+                let x2_val: u32 = match x2 {
+                    Self::Digit(val) => val as u32,
+                    Self::Number(val) => val,
+                    _ => 0u32
+                };
+                op.evaluate(
+                    x1_val,
+                    x2_val
+                )
+            }
+            _ => 0u32
+        };
+        Self::Number(out)
     }
 }
 
 impl From<char> for Token {
     fn from(value: char) -> Self {
         match value {
-            c if Punctuation::charset().contains(&c) => Token::Punctuation(Punctuation::from(value)),
-            c if Operator::charset().contains(&c) => Token::Operator(Operator::from(value, false)),
-            ' ' => Token::Whitespace,
-            'a'..='z' => Token::Letter(value),
-            'A'..='Z' => Token::Letter(value),
-            '0'..='9' => Token::Digit(value.to_digit(10).unwrap() as u8),
-            _ => Token::Unknown(value)
+            c if Punctuation::charset().contains(&c) => Self::Punctuation(Punctuation::from(value)),
+            c if Operator::charset().contains(&c) => Self::Operator(Operator::from(value, false)),
+            ' ' => Self::Whitespace,
+            'a'..='z' => Self::Letter(value),
+            'A'..='Z' => Self::Letter(value),
+            '0'..='9' => Self::Digit(value.to_digit(10).unwrap() as u8),
+            c if c.is_digit(10) => Self::Number(c as u32),
+            _ => Self::Unknown(value)
         }
     }
 }
@@ -212,17 +239,8 @@ impl From<char> for Token {
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Punctuation(val) => write!(f, "{}", val.to_char().unwrap())?,
+            Self::Punctuation(val) => write!(f, "{}", val.to_char().unwrap())?,
             _ => write!(f, "None")?
-            //
-            // c if Punctuation::charset().contains(&c) => write!(f, "{}", self::)?,
-            // c if Punctuation::charset().contains(&c) => Token::Punctuation(Punctuation::from(value)),
-            // c if Operator::charset().contains(&c) => Token::Operator(Operator::from(value, false)),
-            // ' ' => Token::Whitespace,
-            // 'a'..='z' => Token::Letter(value),
-            // 'A'..='Z' => Token::Letter(value),
-            // '0'..='9' => Token::Digit(value as u8),
-            // _ => Token::Unknown(value)
         }
         Ok(())
     }
@@ -275,6 +293,15 @@ mod operator {
         assert_eq!(Operator::Negate.associativity(), Associativity::Right, "Operator associativity for Negate is invalid!");
         assert_eq!(Operator::Factorial.associativity(), Associativity::Right, "Operator associativity for Factorial is invalid!");
         assert_eq!(Operator::Unknown.associativity(), Associativity::Left, "Operator associativity for Unknown is invalid!");
+    }
+    
+    #[test]
+    fn test_evaluate() {
+        assert_eq!(Operator::Plus.evaluate(10, 2), 12, "Operator operation for Plus is invalid!");
+        assert_eq!(Operator::Minus.evaluate(10, 2), 8, "Operator operation for Minus is invalid!");
+        assert_eq!(Operator::Multiply.evaluate(10, 2), 20, "Operator operation for Multiply is invalid!");
+        assert_eq!(Operator::Divide.evaluate(10, 2), 5, "Operator operation for Divide is invalid!");
+        assert_eq!(Operator::Exponent.evaluate(10, 2), 100, "Operator operation for Exponent is invalid!");
     }
 }
 
@@ -330,5 +357,12 @@ mod token {
         assert_eq!(tokens[6], Token::Punctuation(Punctuation::RightParen), "Token for ')' is invalid!");
         assert_eq!(tokens[7], Token::Operator(Operator::Exponent), "Token for '^' is invalid!");
         assert_eq!(tokens[8], Token::Letter('c'), "Token for 'a' is invalid!");
+    }
+
+    #[test]
+    fn test_evaluate() {
+        assert_eq!(Token::evaluate(Token::Digit(5), Token::Digit(1), Token::Operator(Operator::Plus)), Token::Number(6), "Token addition evaluation for Digit is invalid");
+        assert_eq!(Token::evaluate(Token::Number(55), Token::Number(10), Token::Operator(Operator::Plus)), Token::Number(65), "Token addition evaluation for Number is invalid");
+        assert_eq!(Token::evaluate(Token::Letter('a'), Token::Letter('b'), Token::Operator(Operator::Plus)), Token::Number(0), "Token addition evaluation for unknown is invalid");
     }
 }
