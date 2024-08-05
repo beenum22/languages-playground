@@ -147,18 +147,33 @@ impl<T> HeapArray<T> {
         if index >= self.length {
             // return None;
             panic!("Invalid index provided!");
-        }
-
-        unsafe {
+        }unsafe {
             // ptr::read(self.ptr.add(index) as *const &T)
             &*self.ptr.add(index)
         }
+    }
+
+    pub unsafe fn get_copy(&mut self, index: usize) -> T {
+        if index >= self.length {
+            panic!("Index out of bounds!");
+        }
+        ptr::read(self.ptr.add(index))
     }
 
     // TODO: This method might not be needed. Remove after verification.
     pub(crate) fn get_ref(&self) -> &T {
         unsafe {
             &*self.ptr
+        }
+    }
+
+    pub(crate) fn set(&mut self, index: usize, value: T) -> () {
+        if index >= self.size {
+            panic!("Invalid index provided!");
+        }
+
+        unsafe {
+            ptr::write(self.ptr.add(index), value)
         }
     }
 
@@ -197,26 +212,19 @@ impl<T> HeapArray<T> {
         }
     }
 
-    pub(crate) fn delete(&mut self, index: usize) -> ()
-        where T: Default
+    pub(crate) fn delete(&mut self, index: usize) -> T
     {
         if index >= self.length {
             panic!("Index is greater than Array length!");
         }
+        let data_copy: T;
         unsafe {
-            ptr::write(self.ptr.add(index), T::default());
-        }
-        let mut i: usize = index;
-        while i < self.length - 1 {
-            unsafe {
-                ptr::write(self.ptr.add(i), ptr::read(self.ptr.add(i + 1)));
-            }
-            i += 1;
-        }
-        unsafe {
-            ptr::write(self.ptr.add(i), T::default());
+            let index_ptr = self.ptr.add(index);
+            data_copy = ptr::read(index_ptr);
+            ptr::copy(index_ptr.add(1), index_ptr, self.length - 1 - index);
         }
         self.length -= 1;
+        data_copy
     }
 
     pub fn fill(&mut self, val: T)
@@ -507,16 +515,6 @@ impl<T> HeapArray<T> {
             }
         } else {
             None
-        }
-    }
-
-    pub(crate) fn set(&mut self, index: usize, value: T) -> () {
-        if index >= self.size {
-            panic!("Invalid index provided!");
-        }
-
-        unsafe {
-            ptr::write(self.ptr.add(index), value)
         }
     }
 
@@ -888,7 +886,7 @@ impl<T> Drop for HeapArray<T> {
         let layout = Layout::array::<T>(self.size).expect("Layout creation failed");
 
         unsafe {
-            for i in 0..self.length {
+            for i in 0..self.size {
                 ptr::drop_in_place(self.ptr.add(i));
             }
             alloc::dealloc(self.ptr as *mut u8, layout);
@@ -1128,6 +1126,25 @@ mod heap_array {
         };
     }
 
+    macro_rules! define_test_get_copy {
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_get_copy_$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let rnd_val_1 = rng.gen::<$type>();
+                        let rnd_val_2 = rng.gen::<$type>();
+                        let mut array: HeapArray<$type> = HeapArray::values(&[rnd_val_1, rnd_val_2]);
+                        unsafe { assert_eq!(array.get_copy(0), rnd_val_1, "Array take returned invalid value!"); }
+                        assert_eq!(array.length, 2, "Array length must not be changed after take");
+                        assert_eq!(format!("{}", array), format!("[{}, {}]", rnd_val_1, rnd_val_2), "Array is invalid after pop");
+                    }
+                }
+            )*
+        };
+    }
+
     macro_rules! define_test_get {
         ($($type:ty),*) => {
             $(
@@ -1145,6 +1162,28 @@ mod heap_array {
         };
     }
 
+    macro_rules! define_test_set {
+        ($($type:ty),*) => {
+            $(
+                paste! {
+                    #[test]
+                    fn [<test_set_$type:snake>]() {
+                        let mut rng = thread_rng();
+                        let rnd_val_1 = rng.gen::<$type>();
+                        let rnd_val_2 = rng.gen::<$type>();
+                        let rnd_val_3 = rng.gen::<$type>();
+                        let mut array: HeapArray<$type> = HeapArray::with_capacity(2);
+                        array.fill(<$type>::default());
+                        array.set(0, rnd_val_1);
+                        assert_eq!(format!("{array}"), format!("[{}, {}]", rnd_val_1, <$type>::default()), "Array is invalid after set");
+                        array.set(1, rnd_val_2);
+                        assert_eq!(format!("{array}"), format!("[{}, {}]", rnd_val_1, rnd_val_2), "Array is invalid after set");
+                    }
+                }
+            )*
+        };
+    }
+
     macro_rules! define_test_delete {
         ($($type:ty),*) => {
             $(
@@ -1155,7 +1194,7 @@ mod heap_array {
                         let rnd_val_1 = rng.gen::<$type>();
                         let rnd_val_2 = rng.gen::<$type>();
                         let mut array: HeapArray<$type> = HeapArray::values(&[rnd_val_1, rnd_val_2]);
-                        array.delete(0);
+                        assert_eq!(array.delete(0), rnd_val_1, "Invalid value returned after deletion!");
                         assert_ne!(array[0], rnd_val_1, "Verifying the array element deletion");
                         assert_eq!(array[0], rnd_val_2, "Verifying the new array element at index after deletion");
                         assert_eq!(array.length, 1, "Verifying array length after deletion");
@@ -1365,7 +1404,9 @@ mod heap_array {
     define_test_resize!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_push!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_pop!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_get_copy!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_get!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_set!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_delete!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_fill!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_sorted_difference!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
