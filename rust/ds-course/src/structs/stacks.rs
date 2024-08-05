@@ -1,13 +1,13 @@
-use std::ptr::NonNull;
 use crate::structs::arrays::HeapArray;
 use crate::structs::linked_lists::{LinkedList, Node};
 use crate::structs::smart_ptrs::AtomicReferenceCounter;
+use std::ptr::NonNull;
 
 pub struct Stack<T> {
     top: NonNull<T>,
     size: usize,
     length: usize,
-    data: HeapArray<T>  // It would be better to use an Array on Stack since it's fixed size.
+    data: HeapArray<T>, // It would be better to use an Array on Stack since it's fixed size.
 }
 
 impl<T> Stack<T> {
@@ -17,7 +17,7 @@ impl<T> Stack<T> {
             top: NonNull::new(arr.as_ptr_mut()).unwrap(),
             size,
             length: 0,
-            data: arr
+            data: arr,
         }
     }
 
@@ -35,7 +35,7 @@ impl<T> Stack<T> {
 
     pub fn pop(&mut self) -> Option<T> {
         if self.length == 0 {
-            return None
+            return None;
         }
         let data = self.data.pop().unwrap();
         self.length -= 1;
@@ -46,7 +46,7 @@ impl<T> Stack<T> {
 
     pub fn peek(&self) -> Option<&T> {
         if self.length == 0 {
-            return None
+            return None;
         }
         Some(self.data.get(self.data.get_len() - 1))
     }
@@ -61,14 +61,14 @@ impl<T> Stack<T> {
 
     pub fn is_empty(&self) -> bool {
         if self.length == 0 {
-            return true
+            return true;
         }
         false
     }
 
     pub fn is_full(&self) -> bool {
         if self.length == self.size {
-            return true
+            return true;
         }
         false
     }
@@ -77,7 +77,7 @@ impl<T> Stack<T> {
 pub struct DynamicStack<T> {
     top: Option<AtomicReferenceCounter<Node<T>>>,
     length: usize,
-    data: LinkedList<T>
+    data: LinkedList<T>,
 }
 
 impl<T> DynamicStack<T> {
@@ -86,7 +86,7 @@ impl<T> DynamicStack<T> {
         Self {
             top: None,
             length: 0,
-            data: ll
+            data: ll,
         }
     }
 
@@ -98,9 +98,12 @@ impl<T> DynamicStack<T> {
     }
 
     // Time Complexity is O(1)
-    pub fn pop(&mut self) -> Option<T> where T: Copy {
+    pub fn pop(&mut self) -> Option<T>
+    where
+        T: Copy,
+    {
         if self.length == 0 {
-            return None
+            return None;
         }
         let data = self.data.pop_front().unwrap();
         self.length -= 1;
@@ -120,7 +123,7 @@ impl<T> DynamicStack<T> {
 
     pub fn is_empty(&self) -> bool {
         if self.length == 0 {
-            return true
+            return true;
         }
         false
     }
@@ -135,14 +138,18 @@ impl<T> DynamicStack<T> {
 
 #[cfg(test)]
 mod stack {
-    use std::ptr::NonNull;
     use crate::structs::arrays::HeapArray;
     use crate::structs::stacks::Stack;
+    use std::ptr::NonNull;
 
     #[test]
     fn test_new() {
         let stack: Stack<u8> = Stack::new(5);
-        assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut()).unwrap(), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.top,
+            NonNull::new(stack.data.as_ptr_mut()).unwrap(),
+            "Stack top pointer is invalid!"
+        );
         assert_eq!(stack.size, 5, "Stack size is invalid!");
         assert_eq!(stack.length, 0, "Stack length is invalid!");
         assert_eq!(stack.data, HeapArray::new(), "Stack array is invalid!");
@@ -152,12 +159,24 @@ mod stack {
     fn test_push() {
         let mut stack: Stack<u8> = Stack::new(5);
         stack.push(1);
-        assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut()).unwrap(), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.top,
+            NonNull::new(stack.data.as_ptr_mut()).unwrap(),
+            "Stack top pointer is invalid!"
+        );
         assert_eq!(stack.size, 5, "Stack size is invalid!");
         assert_eq!(stack.length, 1, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "[1]".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "[1]".to_string(),
+            "Stack array is invalid!"
+        );
         stack.push(2);
-        assert_eq!(format!("{}", stack.data), "[1, 2]".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "[1, 2]".to_string(),
+            "Stack array is invalid!"
+        );
     }
 
     #[test]
@@ -168,14 +187,28 @@ mod stack {
         stack.push(2);
         stack.push(3);
         assert_eq!(stack.pop(), Some(3), "Stack pop value is invalid!");
-        unsafe { assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut().add(2)).unwrap(), "Stack top pointer is invalid!"); }
+        unsafe {
+            assert_eq!(
+                stack.top,
+                NonNull::new(stack.data.as_ptr_mut().add(2)).unwrap(),
+                "Stack top pointer is invalid!"
+            );
+        }
         assert_eq!(stack.length, 2, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "[1, 2]".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "[1, 2]".to_string(),
+            "Stack array is invalid!"
+        );
         stack.pop();
         stack.pop();
         assert_eq!(stack.pop(), None, "Stack pop value is invalid!");
         assert_eq!(stack.length, 0, "Stack length is invalid!");
-        assert_eq!(stack.top, NonNull::new(stack.data.as_ptr_mut()).unwrap(), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.top,
+            NonNull::new(stack.data.as_ptr_mut()).unwrap(),
+            "Stack top pointer is invalid!"
+        );
     }
 
     #[test]
@@ -222,23 +255,35 @@ mod stack {
 }
 
 mod dynamic_stack {
-    use crate::structs::stacks::{DynamicStack};
+    use crate::structs::stacks::DynamicStack;
 
     #[test]
     fn test_new() {
         let stack: DynamicStack<u8> = DynamicStack::new();
         assert_eq!(stack.top, None, "Stack top pointer is invalid!");
         assert_eq!(stack.length, 0, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "None".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "None".to_string(),
+            "Stack array is invalid!"
+        );
     }
 
     #[test]
     fn test_push() {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
-        assert_eq!(stack.top, Some(stack.data.head_as_ref().unwrap().clone()), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.top,
+            Some(stack.data.head_as_ref().unwrap().clone()),
+            "Stack top pointer is invalid!"
+        );
         assert_eq!(stack.length, 1, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "1".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "1".to_string(),
+            "Stack array is invalid!"
+        );
     }
 
     #[test]
@@ -248,9 +293,17 @@ mod dynamic_stack {
         stack.push(1);
         stack.push(2);
         assert_eq!(stack.pop(), Some(2), "Stack pop value is invalid!");
-        assert_eq!(stack.top, Some(stack.data.head_as_ref().unwrap().clone()), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.top,
+            Some(stack.data.head_as_ref().unwrap().clone()),
+            "Stack top pointer is invalid!"
+        );
         assert_eq!(stack.length, 1, "Stack length is invalid!");
-        assert_eq!(format!("{}", stack.data), "1".to_string(), "Stack array is invalid!");
+        assert_eq!(
+            format!("{}", stack.data),
+            "1".to_string(),
+            "Stack array is invalid!"
+        );
     }
 
     #[test]
@@ -258,8 +311,16 @@ mod dynamic_stack {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.peek(0), Some(&2u8), "Stack peek value at index 0 is invalid!");
-        assert_eq!(stack.peek(1), Some(&1u8), "Stack peek value at index 1 is invalid!");
+        assert_eq!(
+            stack.peek(0),
+            Some(&2u8),
+            "Stack peek value at index 0 is invalid!"
+        );
+        assert_eq!(
+            stack.peek(1),
+            Some(&1u8),
+            "Stack peek value at index 1 is invalid!"
+        );
     }
 
     #[test]
@@ -267,7 +328,11 @@ mod dynamic_stack {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.get_top(), stack.data.head_as_ref(), "Stack top pointer is invalid!");
+        assert_eq!(
+            stack.get_top(),
+            stack.data.head_as_ref(),
+            "Stack top pointer is invalid!"
+        );
     }
 
     #[test]
@@ -284,6 +349,10 @@ mod dynamic_stack {
         assert_eq!(stack.is_full(), false, "Stack should not be full!");
         stack.push(1);
         stack.push(2);
-        assert_eq!(stack.is_full(), false, "Stack should never be full since it's dynamic!");
+        assert_eq!(
+            stack.is_full(),
+            false,
+            "Stack should never be full since it's dynamic!"
+        );
     }
 }
