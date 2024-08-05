@@ -12,8 +12,8 @@ Queue Data Structures
         - Element itself represents priorities
 - Dynamic Queues with non-contiguous memory using a Linked List data structure
 */
-use std::fmt::{Display, Formatter};
 use crate::structs::arrays::HeapArray;
+use std::fmt::{Display, Formatter};
 
 trait QueueADT<T> {
     fn enqueue(&mut self, item: T) -> Result<(), &str>;
@@ -60,7 +60,7 @@ impl<T> QueueADT<T> for BasicQueue<T> {
     // Time Complexity is O(1).
     fn enqueue(&mut self, item: T) -> Result<(), &str> {
         if self.is_full() {
-            return Err("Queue is full!")
+            return Err("Queue is full!");
         }
         self.data.push(item);
         self.length += 1;
@@ -70,7 +70,7 @@ impl<T> QueueADT<T> for BasicQueue<T> {
     // Time Complexity is O(n) because Array shifts all the elements left after item is removed.
     fn dequeue(&mut self) -> Result<(T), &str> {
         if self.is_empty() {
-            return Err("Queue is empty!")
+            return Err("Queue is empty!");
         }
         let data = self.data.delete(0);
         self.length -= 1;
@@ -79,14 +79,14 @@ impl<T> QueueADT<T> for BasicQueue<T> {
 
     fn is_empty(&self) -> bool {
         if self.length == 0 {
-            return true
+            return true;
         }
         false
     }
 
     fn is_full(&self) -> bool {
         if self.length == self.size {
-            return true
+            return true;
         }
         false
     }
@@ -117,7 +117,7 @@ impl<T> QueueADT<T> for EphemeralQueue<T> {
     // Time Complexity is O(1).
     fn enqueue(&mut self, item: T) -> Result<(), &str> {
         if self.is_full() {
-            return Err("Queue is full!")
+            return Err("Queue is full!");
         }
         self.rear += 1;
         self.data.push(item);
@@ -128,7 +128,7 @@ impl<T> QueueADT<T> for EphemeralQueue<T> {
     // Time Complexity is O(1).
     fn dequeue(&mut self) -> Result<(T), &str> {
         if self.is_empty() {
-            return Err("Queue is empty!")
+            return Err("Queue is empty!");
         }
         let data = unsafe { self.data.get_copy(self.front) };
         self.front += 1;
@@ -137,14 +137,14 @@ impl<T> QueueADT<T> for EphemeralQueue<T> {
 
     fn is_empty(&self) -> bool {
         if self.rear == self.front {
-            return true
+            return true;
         }
         false
     }
 
     fn is_full(&self) -> bool {
         if self.rear == self.size {
-            return true
+            return true;
         }
         false
     }
@@ -176,7 +176,7 @@ impl<T> QueueADT<T> for CircularQueue<T> {
     // Time Complexity is O(1).
     fn enqueue(&mut self, item: T) -> Result<(), &str> {
         if self.is_full() {
-            return Err("Queue is full!")
+            return Err("Queue is full!");
         }
         // We have to use push in this case because set operation doesn't work for arrays with no value at index.
         if self.rear >= self.front {
@@ -192,31 +192,24 @@ impl<T> QueueADT<T> for CircularQueue<T> {
     // Time Complexity is O(1).
     fn dequeue(&mut self) -> Result<(T), &str> {
         if self.is_empty() {
-            return Err("Queue is empty!")
+            return Err("Queue is empty!");
         }
         let data = unsafe { self.data.get_copy(self.front) };
-
         self.front = (self.front + 1) % self.size;
-
-        // if self.front == self.size - 1 {
-        //     self.front = 0;
-        // } else {
-        //     self.front += 1;
-        // }
         self.length -= 1;
         Ok(data)
     }
 
     fn is_empty(&self) -> bool {
         if self.length == 0 {
-            return true
+            return true;
         }
         false
     }
 
     fn is_full(&self) -> bool {
         if self.length == self.size {
-            return true
+            return true;
         }
         false
     }
@@ -231,7 +224,7 @@ impl<T: Display> Display for CircularQueue<T> {
             i = (i + 1) % self.size;
             l -= 1;
         }
-        for i in 0..( self.size - self.length) {
+        for i in 0..(self.size - self.length) {
             write!(f, "[]")?;
         }
         Ok(())
@@ -262,7 +255,7 @@ impl<T> DeQueue<T> {
 impl<T> DeQueueADT<T> for DeQueue<T> {
     fn enqueue_front(&mut self, item: T) -> Result<(), &str> {
         if self.is_full() {
-            return Err("Queue is full!")
+            return Err("Queue is full!");
         }
         // We have to use push in this case because set operation doesn't work for arrays with no value at index.
         self.front = (self.front - 1) % self.size;
@@ -277,7 +270,7 @@ impl<T> DeQueueADT<T> for DeQueue<T> {
 
     fn enqueue_back(&mut self, item: T) -> Result<(), &str> {
         if self.is_full() {
-            return Err("Queue is full!")
+            return Err("Queue is full!");
         }
         // We have to use push in this case because set operation doesn't work for arrays with no value at index.
         if self.rear >= self.front {
@@ -292,7 +285,7 @@ impl<T> DeQueueADT<T> for DeQueue<T> {
 
     fn dequeue_front(&mut self) -> Result<(T), &str> {
         if self.is_empty() {
-            return Err("DeQueue is empty!")
+            return Err("DeQueue is empty!");
         }
         let data = unsafe { self.data.get_copy(self.front) };
         self.front = (self.front + 1) % self.size;
@@ -302,7 +295,7 @@ impl<T> DeQueueADT<T> for DeQueue<T> {
 
     fn dequeue_back(&mut self) -> Result<(T), &str> {
         if self.is_empty() {
-            return Err("DeQueue is empty!")
+            return Err("DeQueue is empty!");
         }
         self.rear = (self.rear - 1) % self.size;
         let data = unsafe { self.data.get_copy(self.rear) };
@@ -312,14 +305,14 @@ impl<T> DeQueueADT<T> for DeQueue<T> {
 
     fn is_empty(&self) -> bool {
         if self.length == 0 {
-            return true
+            return true;
         }
         false
     }
 
     fn is_full(&self) -> bool {
         if self.length == self.size {
-            return true
+            return true;
         }
         false
     }
@@ -345,7 +338,10 @@ mod basic_queue {
         assert_eq!(queue.length, 1, "BasicQueue length is invalid!");
         queue.enqueue(2).expect("Failed to enqueue!");
         assert_eq!(queue.length, 2, "BasicQueue length is invalid!");
-        assert!(queue.enqueue(3).is_err(), "BasicQueue must throw error for being full!");
+        assert!(
+            queue.enqueue(3).is_err(),
+            "BasicQueue must throw error for being full!"
+        );
     }
 
     #[test]
@@ -387,7 +383,11 @@ mod ephemeral_queue {
         assert_eq!(queue.rear, 0, "EphemeralQueue rear index is invalid!");
         assert_eq!(queue.size, 5, "EphemeralQueue size is invalid!");
         assert_eq!(queue.length, 0, "EphemeralQueue length is invalid!");
-        assert_eq!(queue.data, HeapArray::new(), "EphemeralQueue array is invalid!");
+        assert_eq!(
+            queue.data,
+            HeapArray::new(),
+            "EphemeralQueue array is invalid!"
+        );
     }
 
     #[test]
@@ -401,7 +401,10 @@ mod ephemeral_queue {
         assert_eq!(queue.length, 2, "EphemeralQueue length is invalid!");
         assert_eq!(queue.front, 0, "EphemeralQueue front index is invalid!");
         assert_eq!(queue.rear, 2, "EphemeralQueue rear index is invalid!");
-        assert!(queue.enqueue(3).is_err(), "EphemeralQueue must throw error for being full!");
+        assert!(
+            queue.enqueue(3).is_err(),
+            "EphemeralQueue must throw error for being full!"
+        );
     }
 
     #[test]
@@ -417,7 +420,10 @@ mod ephemeral_queue {
         assert_eq!(queue.length, 2, "EphemeralQueue length is invalid!");
         assert_eq!(queue.front, 2, "EphemeralQueue front index is invalid!");
         assert_eq!(queue.rear, 2, "EphemeralQueue rear index is invalid!");
-        assert!(queue.dequeue().is_err(), "EphemeralQueue must throw error for being full!");
+        assert!(
+            queue.dequeue().is_err(),
+            "EphemeralQueue must throw error for being full!"
+        );
     }
 
     #[test]
@@ -449,7 +455,11 @@ mod circular_queue {
         assert_eq!(queue.rear, 0, "CircularQueue rear index is invalid!");
         assert_eq!(queue.size, 5, "CircularQueue size is invalid!");
         assert_eq!(queue.length, 0, "CircularQueue length is invalid!");
-        assert_eq!(queue.data, HeapArray::new(), "CircularQueue array is invalid!");
+        assert_eq!(
+            queue.data,
+            HeapArray::new(),
+            "CircularQueue array is invalid!"
+        );
     }
 
     #[test]
@@ -459,43 +469,51 @@ mod circular_queue {
         assert_eq!(queue.length, 1, "CircularQueue length is invalid!");
         assert_eq!(queue.front, 0, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 1, "CircularQueue rear index is invalid!");
-        assert_eq!(format!("{}", queue.data), "[1]", "CircularQueue is invalid!");
+        assert_eq!(
+            format!("{}", queue.data),
+            "[1]",
+            "CircularQueue is invalid!"
+        );
         queue.enqueue(2).expect("Failed to enqueue!");
         queue.enqueue(3).expect("Failed to enqueue!");
         assert_eq!(queue.length, 3, "CircularQueue length is invalid!");
         assert_eq!(queue.front, 0, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 0, "CircularQueue rear index is invalid!");
-        assert_eq!(format!("{}", queue.data), "[1, 2, 3]", "CircularQueue is invalid!");
-        assert!(queue.enqueue(3).is_err(), "CircularQueue must throw error for being full!");
+        assert_eq!(
+            format!("{}", queue.data),
+            "[1, 2, 3]",
+            "CircularQueue is invalid!"
+        );
+        assert!(
+            queue.enqueue(3).is_err(),
+            "CircularQueue must throw error for being full!"
+        );
         queue.dequeue().expect("Failed to dequeue!");
         queue.enqueue(4).expect("Failed to enqueue!");
         assert_eq!(queue.length, 3, "CircularQueue length is invalid!");
         assert_eq!(queue.front, 1, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 1, "CircularQueue rear index is invalid!");
-        assert_eq!(format!("{}", queue.data), "[4, 2, 3]", "CircularQueue is invalid!");
-        assert!(queue.enqueue(3).is_err(), "CircularQueue must throw error for being full!");
+        assert_eq!(
+            format!("{}", queue.data),
+            "[4, 2, 3]",
+            "CircularQueue is invalid!"
+        );
+        assert!(
+            queue.enqueue(3).is_err(),
+            "CircularQueue must throw error for being full!"
+        );
     }
 
     #[test]
     fn test_dequeue() {
-        /*
-            |   0   |   0   |   0   |
-               f,r
-            |   1   |   0   |   0   |
-               f        r
-            |   1   |   2   |   0   |
-                f               r
-            |   1   |   2   |   3   |
-               f r
-            |   0   |   2   |   3   |
-                r       f
-            |   4   |   2   |   3   |
-                       f r
-        */
         let mut queue: CircularQueue<u8> = CircularQueue::new(3);
         queue.enqueue(1).expect("Failed to enqueue!");
         queue.enqueue(2).expect("Failed to enqueue!");
-        assert_eq!(queue.dequeue().expect("Failed to dequeue!"), 1, "CircularQueue dequeue returned value is invalid!");
+        assert_eq!(
+            queue.dequeue().expect("Failed to dequeue!"),
+            1,
+            "CircularQueue dequeue returned value is invalid!"
+        );
         assert_eq!(queue.length, 1, "CircularQueue length is invalid!");
         assert_eq!(queue.front, 1, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 2, "CircularQueue rear index is invalid!");
@@ -504,7 +522,11 @@ mod circular_queue {
         println!("{}", queue.data);
         assert_eq!(queue.front, 1, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 1, "CircularQueue rear index is invalid!");
-        assert_eq!(queue.dequeue().expect("Failed to dequeue!"), 2, "CircularQueue dequeue returned value is invalid!");
+        assert_eq!(
+            queue.dequeue().expect("Failed to dequeue!"),
+            2,
+            "CircularQueue dequeue returned value is invalid!"
+        );
         assert_eq!(queue.length, 2, "CircularQueue length is invalid!");
         assert_eq!(queue.front, 2, "CircularQueue front index is invalid!");
         assert_eq!(queue.rear, 1, "CircularQueue rear index is invalid!");
@@ -512,7 +534,10 @@ mod circular_queue {
         queue.dequeue().expect("Failed to dequeue!");
         queue.dequeue().expect("Failed to dequeue!");
         queue.dequeue().expect("Failed to dequeue!");
-        assert!(queue.dequeue().is_err(), "CircularQueue must throw error for being full!");
+        assert!(
+            queue.dequeue().is_err(),
+            "CircularQueue must throw error for being full!"
+        );
     }
 
     #[test]
@@ -582,14 +607,24 @@ mod dequeue {
         assert_eq!(queue.length, 3, "DeQueue length is invalid!");
         assert_eq!(queue.front, 0, "DeQueue front index is invalid!");
         assert_eq!(queue.rear, 0, "DeQueue rear index is invalid!");
-        assert!(queue.enqueue_back(3).is_err(), "DeQueue must throw error for being full!");
+        assert!(
+            queue.enqueue_back(3).is_err(),
+            "DeQueue must throw error for being full!"
+        );
         queue.dequeue_front().expect("Failed to dequeue!");
         queue.enqueue_back(4).expect("Failed to enqueue!");
         assert_eq!(queue.length, 3, "DeQueue length is invalid!");
         assert_eq!(queue.front, 1, "DeQueue front index is invalid!");
         assert_eq!(queue.rear, 1, "DeQueue rear index is invalid!");
-        assert_eq!(format!("{}", queue.data), "[4, 2, 3]", "DeQueue is invalid!");
-        assert!(queue.enqueue_back(3).is_err(), "DeQueue must throw error for being full!");
+        assert_eq!(
+            format!("{}", queue.data),
+            "[4, 2, 3]",
+            "DeQueue is invalid!"
+        );
+        assert!(
+            queue.enqueue_back(3).is_err(),
+            "DeQueue must throw error for being full!"
+        );
     }
 
     // #[test]
