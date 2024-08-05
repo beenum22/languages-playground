@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 // use crate::traits::GetPointer;
 
-use std::alloc::Layout;
-use std::{alloc, fmt, ptr, slice};
-use std::cmp::Ordering;
-use std::fmt::{Debug, Display, Formatter};
-use std::ops::{Index, IndexMut, Add, Div};
-use std::default::Default;
 use num::{FromPrimitive, Zero};
+use std::alloc::Layout;
+use std::cmp::Ordering;
+use std::default::Default;
+use std::fmt::{Debug, Display, Formatter};
+use std::ops::{Add, Div, Index, IndexMut};
+use std::{alloc, fmt, ptr, slice};
 
 pub struct ArrayIterator<'a, T> {
     array: &'a HeapArray<T>,
@@ -36,14 +36,14 @@ pub struct HeapArray<T> {
 impl<T> HeapArray<T> {
     fn init_mem(size: usize) -> Result<(*mut T, Layout), &'static str> {
         let layout = Layout::array::<T>(size).expect("Layout creation failed");
-        let ptr = unsafe { alloc::alloc_zeroed(layout) as * mut T };
+        let ptr = unsafe { alloc::alloc_zeroed(layout) as *mut T };
         match ptr.is_null() {
             false => Ok((ptr, layout)),
-            true => Err("Memory allocation failed")
+            true => Err("Memory allocation failed"),
         }
     }
 
-    pub fn iter(&self) -> ArrayIterator<T>{
+    pub fn iter(&self) -> ArrayIterator<T> {
         ArrayIterator {
             array: self,
             index: 0,
@@ -64,13 +64,13 @@ impl<T> HeapArray<T> {
         }
         let (ptr, _layout) = match Self::init_mem(size) {
             Ok(ptr) => ptr,
-            Err(e) => panic!("Failed to initialize the array. {}", e)
+            Err(e) => panic!("Failed to initialize the array. {}", e),
         };
 
         HeapArray {
             ptr,
             size,
-            length: 0
+            length: 0,
         }
     }
 
@@ -78,7 +78,7 @@ impl<T> HeapArray<T> {
         let size: usize = values.len();
         let (ptr, _layout) = match Self::init_mem(size) {
             Ok(ptr) => ptr,
-            Err(e) => panic!("Failed to initialize the array. {}", e)
+            Err(e) => panic!("Failed to initialize the array. {}", e),
         };
 
         unsafe {
@@ -88,14 +88,14 @@ impl<T> HeapArray<T> {
         HeapArray {
             ptr,
             size,
-            length: size
+            length: size,
         }
     }
 
     pub(crate) fn resize(&mut self, size: usize) -> Result<(), &'static str> {
         if size < self.length {
             // panic!("Resize capacity is less than the Array length");
-            return Err("Resize capacity is less than the Array length")
+            return Err("Resize capacity is less than the Array length");
         }
         if size == self.size {
             // panic!("Resize capacity is already updated");
@@ -116,9 +116,7 @@ impl<T> HeapArray<T> {
 
     // TODO: Revisit this method. It might be problematic
     pub(crate) fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            slice::from_raw_parts(self.ptr as *const u8, self.length)
-        }
+        unsafe { slice::from_raw_parts(self.ptr as *const u8, self.length) }
     }
 
     pub(crate) fn push(&mut self, value: T) {
@@ -134,12 +132,10 @@ impl<T> HeapArray<T> {
 
     pub fn pop(&mut self) -> Option<T> {
         if self.length == 0 {
-            return None
+            return None;
         }
         self.length -= 1;
-        unsafe {
-            Some(ptr::read(self.ptr.add(self.length)))
-        }
+        unsafe { Some(ptr::read(self.ptr.add(self.length))) }
     }
 
     // Time Complexity is constant
@@ -147,7 +143,8 @@ impl<T> HeapArray<T> {
         if index >= self.length {
             // return None;
             panic!("Invalid index provided!");
-        }unsafe {
+        }
+        unsafe {
             // ptr::read(self.ptr.add(index) as *const &T)
             &*self.ptr.add(index)
         }
@@ -162,9 +159,7 @@ impl<T> HeapArray<T> {
 
     // TODO: This method might not be needed. Remove after verification.
     pub(crate) fn get_ref(&self) -> &T {
-        unsafe {
-            &*self.ptr
-        }
+        unsafe { &*self.ptr }
     }
 
     pub(crate) fn set(&mut self, index: usize, value: T) -> () {
@@ -172,9 +167,7 @@ impl<T> HeapArray<T> {
             panic!("Invalid index provided!");
         }
 
-        unsafe {
-            ptr::write(self.ptr.add(index), value)
-        }
+        unsafe { ptr::write(self.ptr.add(index), value) }
     }
 
     pub(crate) fn as_ptr(&self) -> *const T {
@@ -199,7 +192,7 @@ impl<T> HeapArray<T> {
         } else if index > self.length {
             panic!("Index is greater than the length of an Array!")
         }
-        let mut i:usize = self.length;
+        let mut i: usize = self.length;
         while i > index {
             unsafe {
                 ptr::write(self.ptr.add(i), ptr::read(self.ptr.add(i - 1)));
@@ -212,8 +205,7 @@ impl<T> HeapArray<T> {
         }
     }
 
-    pub(crate) fn delete(&mut self, index: usize) -> T
-    {
+    pub(crate) fn delete(&mut self, index: usize) -> T {
         if index >= self.length {
             panic!("Index is greater than Array length!");
         }
@@ -228,11 +220,12 @@ impl<T> HeapArray<T> {
     }
 
     pub fn fill(&mut self, val: T)
-        where T: Copy
+    where
+        T: Copy,
     {
         let start_index = match self.length {
             0 => 0,
-            _ => self.length - 1
+            _ => self.length - 1,
         };
         for _i in start_index..self.size {
             self.push(val);
@@ -242,7 +235,8 @@ impl<T> HeapArray<T> {
 
     // Time Complexity is O(n)
     pub(crate) fn sorted_difference(&mut self, other: &HeapArray<T>) -> ()
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         let mut i: usize = 0;
         let mut j: usize = 0;
@@ -282,7 +276,8 @@ impl<T> HeapArray<T> {
 
     // Time Complexity is O(n)
     pub(crate) fn sorted_intersection(&mut self, other: &HeapArray<T>) -> ()
-        where T: PartialOrd + Display
+    where
+        T: PartialOrd + Display,
     {
         let mut i: usize = 0;
         let mut j: usize = 0;
@@ -315,7 +310,8 @@ impl<T> HeapArray<T> {
 
     // Time Complexity is O(n)
     pub(crate) fn sorted_union(&mut self, other: &HeapArray<T>) -> ()
-        where T: PartialOrd + Display
+    where
+        T: PartialOrd + Display,
     {
         let mut i: usize = 0;
         let mut j: usize = 0;
@@ -370,7 +366,8 @@ impl<T> HeapArray<T> {
 
     // Time Complexity is ??
     pub(crate) fn sorted_merge(&mut self, other: &HeapArray<T>) -> ()
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         let mut i: usize = 0;
         let mut j: usize = 0;
@@ -416,18 +413,19 @@ impl<T> HeapArray<T> {
     }
 
     pub(crate) fn linear_search(&self, value: T) -> Option<usize>
-        where T: PartialEq
+    where
+        T: PartialEq,
     {
         let mut i: usize = 0;
         while i < self.length {
             unsafe {
                 if ptr::read(self.ptr.add(i)) == value {
-                    return Some(i)
+                    return Some(i);
                 }
             }
             i += 1;
         }
-        return None
+        return None;
     }
 
     pub fn swap(&self, index_1: usize, index_2: usize) -> () {
@@ -440,23 +438,25 @@ impl<T> HeapArray<T> {
     }
 
     pub(crate) fn transposition_search(&self, value: T) -> Option<usize>
-        where T: PartialEq
+    where
+        T: PartialEq,
     {
         let mut i: usize = 0;
         while i < self.length {
             unsafe {
                 if ptr::read(self.ptr.add(i)) == value {
-                    self.swap(i-1, i);
-                    return Some(i)
+                    self.swap(i - 1, i);
+                    return Some(i);
                 }
             }
             i += 1;
         }
-        return None
+        return None;
     }
 
     pub(crate) fn move_to_head_search(&self, value: T) -> Option<usize>
-        where T: PartialEq
+    where
+        T: PartialEq,
     {
         let mut i: usize = 0;
         while i < self.length {
@@ -468,59 +468,60 @@ impl<T> HeapArray<T> {
             }
             i += 1;
         }
-        return None
+        return None;
     }
 
     pub(crate) fn binary_search(&self, value: T) -> Option<usize>
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         let mut low: isize = 0;
         let mut high: isize = self.length as isize - 1;
         while low <= high {
-            let mid: isize = (low + high)/2;
-            let mid_value: &T = unsafe {&*self.ptr.add(mid as usize)};
+            let mid: isize = (low + high) / 2;
+            let mid_value: &T = unsafe { &*self.ptr.add(mid as usize) };
             if &value == mid_value {
-                return Some(mid as usize)
+                return Some(mid as usize);
             } else if &value < mid_value {
                 high = mid - 1;
             } else if &value > mid_value {
                 low = mid + 1
             }
         }
-        return None
+        return None;
     }
 
     pub(crate) fn recursive_binary_search(&self, low: isize, high: isize, value: T) -> Option<usize>
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         if low <= high {
-            let mid: isize = (low + high)/2;
-            let mid_value: &T = unsafe {&*self.ptr.add(mid as usize)};
+            let mid: isize = (low + high) / 2;
+            let mid_value: &T = unsafe { &*self.ptr.add(mid as usize) };
             if &value == mid_value {
-                return Some(mid as usize)
+                return Some(mid as usize);
             } else if &value < mid_value {
-                return self.recursive_binary_search(low, mid - 1, value)
+                return self.recursive_binary_search(low, mid - 1, value);
             } else if &value > mid_value {
-                return self.recursive_binary_search(mid + 1, high, value)
+                return self.recursive_binary_search(mid + 1, high, value);
             }
         }
-        return None
+        return None;
     }
 
     // Time Complexity is constant
     pub(crate) fn get_optional(&self, index: usize) -> Option<&T> {
         return if index < self.length {
-            unsafe {
-                Some(&*self.ptr.add(index))
-            }
+            unsafe { Some(&*self.ptr.add(index)) }
         } else {
             None
-        }
+        };
     }
 
     // Time complexity is O(n)
     pub(crate) fn max(&self) -> &T
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         let mut max: &T = self.get(0);
         for i in 1..self.length {
@@ -529,12 +530,13 @@ impl<T> HeapArray<T> {
                 max = target;
             }
         }
-        return max
+        return max;
     }
 
     // Time complexity is O(n)
     pub(crate) fn min(&self) -> &T
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         let mut min: &T = self.get(0);
         for i in 1..self.length {
@@ -543,42 +545,47 @@ impl<T> HeapArray<T> {
                 min = target;
             }
         }
-        return min
+        return min;
     }
 
     // Time complexity is O(n)
     pub(crate) fn sum(&self) -> T
-        where T: Add<Output = T> + Zero + Copy + Display,
+    where
+        T: Add<Output = T> + Zero + Copy + Display,
     {
         let mut sum: T = T::zero();
         for i in 0..self.length {
             println!("element={}", self[i]);
             sum = sum + *self.get(i)
         }
-        return sum
+        return sum;
     }
 
     // Time complexity is O(n)
     pub(crate) fn recursive_sum(&self, n: usize) -> T
-        where T: Add<Output = T> + Zero + Copy,
+    where
+        T: Add<Output = T> + Zero + Copy,
     {
         match n.checked_sub(1) {
             Some(n_out) => self.recursive_sum(n_out) + *self.get(n),
-            None => *self.get(n)
+            None => *self.get(n),
         }
     }
 
     // Time complexity is O(n)
     pub(crate) fn avg(&self) -> Result<T, &'static str>
-        where T: Div<Output = T> + Copy + Zero + FromPrimitive + Display,
+    where
+        T: Div<Output = T> + Copy + Zero + FromPrimitive + Display,
     {
-        let count = T::from_usize(self.length).ok_or("Average calculation not supported for the Array data type.")?;
-        return Ok(self.sum() / count)
+        let count = T::from_usize(self.length)
+            .ok_or("Average calculation not supported for the Array data type.")?;
+        return Ok(self.sum() / count);
     }
 
     // Time complexity is O(n)
     pub(crate) fn copy_reverse(&mut self) -> ()
-        where T: Copy
+    where
+        T: Copy,
     {
         let mut copy = HeapArray::with_capacity(self.size);
         for i in (0..self.length).rev() {
@@ -591,7 +598,8 @@ impl<T> HeapArray<T> {
 
     // Time complexity is O(n)
     pub(crate) fn swap_reverse(&mut self) -> ()
-        where T: Copy
+    where
+        T: Copy,
     {
         let mut i: usize = 0;
         let mut j: usize = self.length - 1;
@@ -606,11 +614,12 @@ impl<T> HeapArray<T> {
 
     // Time complexity is O(n)
     pub fn left_shift(&mut self) -> ()
-        where T: Copy
+    where
+        T: Copy,
     {
         let temp_val = self[0];
         for i in 1..self.length {
-            self.set(i - 1,self[i]);
+            self.set(i - 1, self[i]);
             if i == self.length - 1 {
                 self[i] = temp_val;
             }
@@ -619,11 +628,12 @@ impl<T> HeapArray<T> {
 
     // Time complexity is O(n)
     pub(crate) fn right_shift(&mut self) -> ()
-        where T: Copy
+    where
+        T: Copy,
     {
         let temp_val = self[self.length - 1];
-        for i in (0..(self.length-1)).rev() {
-            self.set(i + 1,self[i]);
+        for i in (0..(self.length - 1)).rev() {
+            self.set(i + 1, self[i]);
             if i == 0 {
                 self[i] = temp_val;
             }
@@ -632,40 +642,43 @@ impl<T> HeapArray<T> {
 
     // Time complexity is O(n)
     pub(crate) fn sorted_insert(&mut self, value: T) -> ()
-        where T: Copy + PartialOrd + Display,
+    where
+        T: Copy + PartialOrd + Display,
     {
         if self.length == self.size {
             panic!("Array is already full!");
         }
-        let mut i:usize = self.length - 1;
+        let mut i: usize = self.length - 1;
         println!("{} > {}", *self.get(i), value);
         unsafe {
             while *self.get(i) > value {
                 println!("{i}");
-                ptr::write(self.ptr.add(i+1), *self.get(i));
+                ptr::write(self.ptr.add(i + 1), *self.get(i));
                 i -= 1;
             }
-            ptr::write(self.ptr.add(i+1), value);
+            ptr::write(self.ptr.add(i + 1), value);
             self.length += 1;
         }
     }
 
     // Time complexity is O(n)
     pub(crate) fn is_sorted(&self) -> bool
-        where T: PartialOrd
+    where
+        T: PartialOrd,
     {
         for i in 0..self.length - 1 {
-            if *self.get(i) > *self.get(i+1) {
-                return false
+            if *self.get(i) > *self.get(i + 1) {
+                return false;
             }
         }
-        return true
+        return true;
     }
 
     // TODO: I believe I should do len -2 - i in the second loop.
     // Time complexity is O(n^2)
     pub(crate) fn sort(&self) -> ()
-        where T: PartialOrd + Display
+    where
+        T: PartialOrd + Display,
     {
         for i in 0..self.length - 1 {
             for j in 0..(self.length - 1 - i) {
@@ -678,7 +691,8 @@ impl<T> HeapArray<T> {
 
     // Time complexity is ...
     pub(crate) fn signed_sort(&self) -> ()
-        where T: PartialOrd + Zero
+    where
+        T: PartialOrd + Zero,
     {
         let mut i: usize = 0;
         let mut j: usize = self.length - 1;
@@ -702,7 +716,7 @@ impl<T> Default for HeapArray<T> {
     }
 }
 
-impl<T: Clone > Clone for HeapArray<T> {
+impl<T: Clone> Clone for HeapArray<T> {
     fn clone(&self) -> Self {
         let mut clone = Self::with_capacity(self.size);
         for i in 0..self.length {
@@ -745,21 +759,21 @@ impl<T: Debug> Debug for HeapArray<T> {
 impl<T: PartialEq> PartialEq for HeapArray<T> {
     fn eq(&self, other: &Self) -> bool {
         if self.length != other.length {
-            return false
+            return false;
         }
         for i in 0..self.length {
             if self[i] != other[i] {
-                return false
+                return false;
             }
         }
-        return true
+        return true;
     }
 
     fn ne(&self, other: &Self) -> bool {
         if self.as_bytes() != other.as_bytes() {
-            return true
+            return true;
         }
-        return false
+        return false;
     }
 }
 
@@ -779,7 +793,7 @@ impl<T: PartialOrd> PartialOrd for HeapArray<T> {
         let mut j: usize = 0;
         while i < self.length && j < other.length {
             if self[i] != other[j] {
-                break
+                break;
             }
             i += 1;
             j += 1;
@@ -796,7 +810,7 @@ impl<T: PartialOrd> PartialOrd for HeapArray<T> {
         let mut j: usize = 0;
         while i < self.length && j < other.length {
             if self[i] != other[j] {
-                break
+                break;
             }
             i += 1;
             j += 1;
@@ -813,7 +827,7 @@ impl<T: PartialOrd> PartialOrd for HeapArray<T> {
         let mut j: usize = 0;
         while i < self.length && j < other.length {
             if self[i] != other[j] {
-                break
+                break;
             }
             i += 1;
             j += 1;
@@ -830,7 +844,7 @@ impl<T: PartialOrd> PartialOrd for HeapArray<T> {
         let mut j: usize = 0;
         while i < self.length && j < other.length {
             if self[i] != other[j] {
-                break
+                break;
             }
             i += 1;
             j += 1;
@@ -856,9 +870,7 @@ impl<T> Index<usize> for HeapArray<T> {
     type Output = T;
     fn index(&self, index: usize) -> &Self::Output {
         if index < self.size {
-            unsafe {
-                &*self.ptr.add(index)
-            }
+            unsafe { &*self.ptr.add(index) }
         } else {
             panic!("Index out of range!");
         }
@@ -872,9 +884,7 @@ impl<T> IndexMut<usize> for HeapArray<T> {
                 // self.length = index + 1;
                 self.length += 1;
             }
-            unsafe {
-                &mut *self.ptr.add(index)
-            }
+            unsafe { &mut *self.ptr.add(index) }
         } else {
             panic!("Index out of range!");
         }
@@ -922,10 +932,10 @@ impl<T> Drop for HeapArray<T> {
 
 #[cfg(test)]
 mod heap_array {
-    use crate::structs::strings::HeapString;
     use super::*;
+    use crate::structs::strings::HeapString;
     use paste::paste;
-    use rand::{Rng, thread_rng};
+    use rand::{thread_rng, Rng};
 
     macro_rules! define_test_new {
         ($($struct:ident<$type:ty>),*) => {
@@ -1358,21 +1368,18 @@ mod heap_array {
 
     #[test]
     fn test_iterator_structs() {
-        #[derive(Debug)]
-        #[derive(Default)]
+        #[derive(Debug, Default)]
         struct TestElement<T> {
-            val: T
+            val: T,
         }
 
         struct TestCollection<T> {
-            items: HeapArray<TestElement<T>>
+            items: HeapArray<TestElement<T>>,
         }
         let mut items: HeapArray<TestElement<u8>> = HeapArray::with_capacity(2);
-        items.push(TestElement{val: 5});
-        items.push(TestElement{val: 10});
-        let collection: TestCollection<u8> = TestCollection {
-            items
-        };
+        items.push(TestElement { val: 5 });
+        items.push(TestElement { val: 10 });
+        let collection: TestCollection<u8> = TestCollection { items };
 
         // let mut iterator = collection.items.iter();
         for i in collection.items.iter() {
@@ -1388,14 +1395,20 @@ mod heap_array {
         // assert_eq!(into_iterator.next(), None, "The into iterator impl. did not return the expected sequence.");
     }
 
-    define_test_iterator!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_iterator!(
+        char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString
+    );
     define_test_iterator!(HeapArray<i8>);
     // define_test_iterator!(HeapArray<i8>, SparseMatrixElement<i8>);
 
-    define_test_new!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_new!(
+        char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString
+    );
     define_test_new!(HeapArray<i8>);
 
-    define_test_with_capacity!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString);
+    define_test_with_capacity!(
+        char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, String, HeapString
+    );
     define_test_with_capacity!(HeapArray<i8>);
 
     define_test_values!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
@@ -1409,8 +1422,12 @@ mod heap_array {
     define_test_set!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_delete!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_fill!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
-    define_test_sorted_difference!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
-    define_test_sorted_intersection!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
+    define_test_sorted_difference!(
+        char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64
+    );
+    define_test_sorted_intersection!(
+        char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64
+    );
     define_test_sorted_union!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_sorted_merge!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
     define_test_swap_reverse!(char, usize, isize, i8, i16, i32, i64, u8, u16, u32, u64, f32, f64);
