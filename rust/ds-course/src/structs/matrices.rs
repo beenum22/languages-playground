@@ -1,10 +1,13 @@
+use crate::structs::arrays::HeapArray;
+use crate::structs::matrices::MatrixType::{
+    Dense, Diagonal, LowerTriangular, Sparse, Toeplitz, Tridiagonal, UpperTriangular,
+};
 use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
-use crate::structs::arrays::{HeapArray};
-use crate::structs::matrices::MatrixType::{Dense, Diagonal, LowerTriangular, Sparse, Toeplitz, Tridiagonal, UpperTriangular};
 
 enum MatrixType<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     Dense(DenseMatrix<T>),
     Diagonal(DiagonalMatrix<T>),
@@ -16,7 +19,8 @@ enum MatrixType<T>
 }
 
 pub struct Matrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     rows: usize,
     columns: usize,
@@ -25,9 +29,10 @@ pub struct Matrix<T>
     auto_adjust: bool,
 }
 
-impl<T: PartialEq > Matrix<T> {
+impl<T: PartialEq> Matrix<T> {
     pub fn new(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -39,7 +44,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_diagonal(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -51,7 +57,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_upper_triangular(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -63,7 +70,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_lower_triangular(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -75,7 +83,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_toeplitz(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -87,7 +96,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_tridiagonal(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -99,7 +109,8 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     pub fn new_sparse(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         Matrix {
             rows: row,
@@ -147,7 +158,9 @@ impl<T: PartialEq > Matrix<T> {
     // }
 
     fn optimize(&mut self) -> ()
-        where T:  PartialEq, T: Default
+    where
+        T: PartialEq,
+        T: Default,
     {
         // // Cases that needs to be handled
         // // By default, Dense matrix is created
@@ -187,7 +200,9 @@ impl<T: PartialEq > Matrix<T> {
     }
 
     fn convert_to_diagonal(&mut self)
-        where T: Default, T: Copy
+    where
+        T: Default,
+        T: Copy,
     {
         // let mut new_matrix: DiagonalMatrix<T> = DiagonalMatrix::new(self.rows.min(self.columns));
         // for i in 1..self.rows.min(self.columns) + 1 {
@@ -201,9 +216,9 @@ impl<T: PartialEq > Matrix<T> {
     }
 }
 
-impl<T: Display + Default + PartialEq > Display for Matrix<T> {
+impl<T: Display + Default + PartialEq> Display for Matrix<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        for i in 1..self.rows + 1{
+        for i in 1..self.rows + 1 {
             for j in 1..self.columns + 1 {
                 write!(f, "{:>3} ", self.get(i, j).unwrap())?;
             }
@@ -215,7 +230,7 @@ impl<T: Display + Default + PartialEq > Display for Matrix<T> {
 
 enum IndexOrder {
     RowMajor,
-    ColumnMajor
+    ColumnMajor,
 }
 
 pub trait MatrixOperations<T: PartialEq> {
@@ -229,17 +244,19 @@ pub trait MatrixOperations<T: PartialEq> {
 }
 
 pub struct DenseMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     rows: usize,
     columns: usize,
     array: HeapArray<T>,
-    index_order: IndexOrder
+    index_order: IndexOrder,
 }
 
 impl<T: PartialEq> DenseMatrix<T> {
     pub fn new(row: usize, col: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
         let mut array = HeapArray::with_capacity(Self::array_size(row, col));
         array.fill(T::default());
@@ -274,7 +291,7 @@ impl<T: PartialEq> MatrixOperations<T> for DenseMatrix<T> {
         return match self.index_order {
             IndexOrder::RowMajor => self.row_major_index(i, j),
             IndexOrder::ColumnMajor => self.column_major_index(i, j),
-        }
+        };
     }
 
     fn get(&self, row: usize, col: usize) -> &T {
@@ -287,7 +304,8 @@ impl<T: PartialEq> MatrixOperations<T> for DenseMatrix<T> {
 }
 
 pub struct TridiagonalMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     dimension: usize,
     array: HeapArray<T>,
@@ -296,9 +314,11 @@ pub struct TridiagonalMatrix<T>
 
 impl<T: PartialEq> TridiagonalMatrix<T> {
     pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let mut array: HeapArray<T> = HeapArray::with_capacity( Self::array_size(dimension, dimension));
+        let mut array: HeapArray<T> =
+            HeapArray::with_capacity(Self::array_size(dimension, dimension));
         array.fill(T::default());
         TridiagonalMatrix {
             dimension,
@@ -330,9 +350,9 @@ impl<T: PartialEq> MatrixOperations<T> for TridiagonalMatrix<T> {
 
     fn get(&self, row: usize, col: usize) -> &T {
         if (row as isize - col as isize).abs() <= 1 {
-            return self.array.get(self.array_index(row, col))
+            return self.array.get(self.array_index(row, col));
         }
-        return &self.default_value
+        return &self.default_value;
     }
 
     fn set(&mut self, row: usize, col: usize, val: T) {
@@ -343,19 +363,22 @@ impl<T: PartialEq> MatrixOperations<T> for TridiagonalMatrix<T> {
 }
 
 pub struct UpperTraingularMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     dimension: usize,
     array: HeapArray<T>,
     default_value: T,
-    index_order: IndexOrder
+    index_order: IndexOrder,
 }
 
 impl<T: PartialEq> UpperTraingularMatrix<T> {
     pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let mut array: HeapArray<T> = HeapArray::with_capacity(Self::array_size(dimension, dimension));
+        let mut array: HeapArray<T> =
+            HeapArray::with_capacity(Self::array_size(dimension, dimension));
         array.fill(T::default());
         UpperTraingularMatrix {
             dimension,
@@ -369,17 +392,19 @@ impl<T: PartialEq> UpperTraingularMatrix<T> {
         let row_signed = row as isize;
         let col_signed = col as isize;
         let dimenion_signed = self.dimension as isize;
-        ((dimenion_signed * (row_signed - 1) - (row_signed - 2) * (row_signed - 1)/2) + col_signed - row_signed) as usize
+        ((dimenion_signed * (row_signed - 1) - (row_signed - 2) * (row_signed - 1) / 2)
+            + col_signed
+            - row_signed) as usize
     }
 
     fn column_major_index(&self, row: usize, col: usize) -> usize {
-        return (col * (col - 1)/2) + (row - 1)
+        return (col * (col - 1) / 2) + (row - 1);
     }
 }
 
 impl<T: PartialEq> MatrixOperations<T> for UpperTraingularMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
-        row * (row + 1)/2
+        row * (row + 1) / 2
     }
 
     fn array_index(&self, row: usize, col: usize) -> usize {
@@ -389,14 +414,14 @@ impl<T: PartialEq> MatrixOperations<T> for UpperTraingularMatrix<T> {
         return match self.index_order {
             IndexOrder::RowMajor => self.row_major_index(row, col),
             IndexOrder::ColumnMajor => self.column_major_index(row, col),
-        }
+        };
     }
 
     fn get(&self, row: usize, col: usize) -> &T {
         if row <= col {
-            return self.array.get(self.array_index(row, col))
+            return self.array.get(self.array_index(row, col));
         }
-        return &self.default_value
+        return &self.default_value;
     }
 
     fn set(&mut self, row: usize, col: usize, val: T) {
@@ -407,19 +432,22 @@ impl<T: PartialEq> MatrixOperations<T> for UpperTraingularMatrix<T> {
 }
 
 pub struct LowerTriangularMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     dimension: usize,
     array: HeapArray<T>,
     default_value: T,
-    index_order: IndexOrder
+    index_order: IndexOrder,
 }
 
 impl<T: PartialEq> LowerTriangularMatrix<T> {
     pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let mut array: HeapArray<T> = HeapArray::with_capacity(Self::array_size(dimension, dimension));
+        let mut array: HeapArray<T> =
+            HeapArray::with_capacity(Self::array_size(dimension, dimension));
         array.fill(T::default());
         LowerTriangularMatrix {
             dimension,
@@ -430,27 +458,29 @@ impl<T: PartialEq> LowerTriangularMatrix<T> {
     }
 
     fn row_major_index(row: usize, col: usize) -> usize {
-        return (row * (row - 1)/2) + (col - 1)
+        return (row * (row - 1) / 2) + (col - 1);
     }
 
     fn column_major_index(&self, row: usize, col: usize) -> usize {
         let row_signed = row as isize;
         let col_signed = col as isize;
         let dimenion_signed = self.dimension as isize;
-        ((dimenion_signed * (col_signed - 1) - (col_signed - 2) * (col_signed - 1)/2) + row_signed - col_signed) as usize
+        ((dimenion_signed * (col_signed - 1) - (col_signed - 2) * (col_signed - 1) / 2)
+            + row_signed
+            - col_signed) as usize
     }
 }
 
 impl<T: PartialEq> MatrixOperations<T> for LowerTriangularMatrix<T> {
     fn array_size(row: usize, _col: usize) -> usize {
-        row * (row + 1)/2
+        row * (row + 1) / 2
     }
 
     fn array_index(&self, row: usize, col: usize) -> usize {
         return match self.index_order {
             IndexOrder::RowMajor => Self::row_major_index(row, col),
             IndexOrder::ColumnMajor => self.column_major_index(row, col),
-        }
+        };
     }
 
     fn get(&self, row: usize, col: usize) -> &T {
@@ -458,9 +488,9 @@ impl<T: PartialEq> MatrixOperations<T> for LowerTriangularMatrix<T> {
             panic!("Row or column can't be 0. Matrices always start with 1 indices!");
         }
         if row >= col {
-            return self.array.get(self.array_index(row, col))
+            return self.array.get(self.array_index(row, col));
         }
-        return &self.default_value
+        return &self.default_value;
     }
 
     fn set(&mut self, row: usize, col: usize, val: T) {
@@ -474,23 +504,26 @@ impl<T: PartialEq> MatrixOperations<T> for LowerTriangularMatrix<T> {
 }
 
 pub struct DiagonalMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     dimension: usize,
     array: HeapArray<T>,
-    default_value: T
+    default_value: T,
 }
 
 impl<T: PartialEq> DiagonalMatrix<T> {
     pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let mut array: HeapArray<T> = HeapArray::with_capacity(Self::array_size(dimension, dimension));
+        let mut array: HeapArray<T> =
+            HeapArray::with_capacity(Self::array_size(dimension, dimension));
         array.fill(T::default());
         DiagonalMatrix {
             dimension,
             array,
-            default_value: T::default()
+            default_value: T::default(),
         }
     }
 }
@@ -509,9 +542,9 @@ impl<T: PartialEq> MatrixOperations<T> for DiagonalMatrix<T> {
 
     fn get(&self, row: usize, col: usize) -> &T {
         if row == col {
-            return self.array.get(self.array_index(row, col))
+            return self.array.get(self.array_index(row, col));
         }
-        return &self.default_value
+        return &self.default_value;
     }
 
     fn set(&mut self, row: usize, col: usize, val: T) {
@@ -523,7 +556,8 @@ impl<T: PartialEq> MatrixOperations<T> for DiagonalMatrix<T> {
 
 // TODO: Fix Toeplitz Matrix struct
 pub struct ToeplitzMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     dimension: usize,
     array: HeapArray<T>,
@@ -531,14 +565,13 @@ pub struct ToeplitzMatrix<T>
 
 impl<T: PartialEq> ToeplitzMatrix<T> {
     pub fn new(dimension: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let mut array: HeapArray<T> = HeapArray::with_capacity(Self::array_size(dimension, dimension));
+        let mut array: HeapArray<T> =
+            HeapArray::with_capacity(Self::array_size(dimension, dimension));
         array.fill(T::default());
-        ToeplitzMatrix {
-            dimension,
-            array,
-        }
+        ToeplitzMatrix { dimension, array }
     }
 }
 
@@ -561,7 +594,7 @@ impl<T: PartialEq> MatrixOperations<T> for ToeplitzMatrix<T> {
     }
 
     fn get(&self, row: usize, col: usize) -> &T {
-        return self.array.get(self.array_index(row, col))
+        return self.array.get(self.array_index(row, col));
     }
 
     fn set(&mut self, row: usize, col: usize, val: T) {
@@ -569,9 +602,7 @@ impl<T: PartialEq> MatrixOperations<T> for ToeplitzMatrix<T> {
     }
 }
 
-#[derive(Debug)]
-#[derive(PartialEq)]
-#[derive(Default)]
+#[derive(Debug, PartialEq, Default)]
 pub(crate) struct SparseMatrixElement<T> {
     row: usize,
     column: usize,
@@ -583,7 +614,7 @@ impl<T: Copy> Clone for SparseMatrixElement<T> {
         SparseMatrixElement {
             row: self.row,
             column: self.column,
-            value: self.value
+            value: self.value,
         }
     }
 }
@@ -591,20 +622,23 @@ impl<T: Copy> Clone for SparseMatrixElement<T> {
 impl<T: Copy> Copy for SparseMatrixElement<T> {}
 
 pub struct SparseMatrix<T>
-    where T: PartialEq
+where
+    T: PartialEq,
 {
     rows: usize,
     columns: usize,
     nonzero_count: usize,
     array: HeapArray<SparseMatrixElement<T>>,
-    default_value: T
+    default_value: T,
 }
 
 impl<T: Default + PartialEq> SparseMatrix<T> {
     pub fn new(rows: usize, columns: usize) -> Self
-        where T: Default + Copy
+    where
+        T: Default + Copy,
     {
-        let array: HeapArray<SparseMatrixElement<T>> = HeapArray::with_capacity(Self::array_size(rows, columns));
+        let array: HeapArray<SparseMatrixElement<T>> =
+            HeapArray::with_capacity(Self::array_size(rows, columns));
         SparseMatrix {
             rows,
             columns,
@@ -630,24 +664,25 @@ impl<T: PartialEq> MatrixOperations<T> for SparseMatrix<T> {
     fn get(&self, row: usize, col: usize) -> &T {
         for ele in self.array.iter() {
             if ele.row == row && ele.column == col {
-                return &ele.value
+                return &ele.value;
             }
         }
-        return &self.default_value
+        return &self.default_value;
     }
 
-    fn set(&mut self, row: usize, col: usize, val: T) where T: PartialEq {
+    fn set(&mut self, row: usize, col: usize, val: T)
+    where
+        T: PartialEq,
+    {
         if val != self.default_value {
             if self.nonzero_count == (self.rows * self.columns) / 2 {
                 panic!("Sparse Matrix non-zero values count will exceed zero values count!")
             }
-            self.array.push(
-                SparseMatrixElement{
-                    row,
-                    column: col,
-                    value: val,
-                }
-            );
+            self.array.push(SparseMatrixElement {
+                row,
+                column: col,
+                value: val,
+            });
             self.nonzero_count += 1;
         }
     }
@@ -660,15 +695,26 @@ mod diagonal_matrix {
     #[test]
     fn test_new() {
         let matrix: DiagonalMatrix<i8> = DiagonalMatrix::new(5);
-        assert_eq!(matrix.array.get_size(), 5, "Verifying diagonal matrix array creation");
-        assert_eq!(matrix.array.get_len(), 5, "Verifying diagonal matrix array creation");
+        assert_eq!(
+            matrix.array.get_size(),
+            5,
+            "Verifying diagonal matrix array creation"
+        );
+        assert_eq!(
+            matrix.array.get_len(),
+            5,
+            "Verifying diagonal matrix array creation"
+        );
     }
 
     #[test]
     fn test_set() {
         let mut matrix: DiagonalMatrix<i8> = DiagonalMatrix::new(5);
         matrix.set(1, 1, 10);
-        assert_eq!(matrix.array[0], 10, "Testing setting a diagonal matrix element");
+        assert_eq!(
+            matrix.array[0], 10,
+            "Testing setting a diagonal matrix element"
+        );
     }
 
     #[test]
@@ -677,9 +723,21 @@ mod diagonal_matrix {
         let val: i8 = 10;
         matrix.set(1, 1, val);
         matrix.set(4, 4, val);
-        assert_eq!(matrix.get(1, 1), &val, "Testing fetching a diagonal matrix element");
-        assert_eq!(matrix.get(4, 4), &val, "Testing fetching a diagonal matrix element");
-        assert_eq!(matrix.get(1, 4), &0, "Testing fetching a null diagonal matrix element");
+        assert_eq!(
+            matrix.get(1, 1),
+            &val,
+            "Testing fetching a diagonal matrix element"
+        );
+        assert_eq!(
+            matrix.get(4, 4),
+            &val,
+            "Testing fetching a diagonal matrix element"
+        );
+        assert_eq!(
+            matrix.get(1, 4),
+            &0,
+            "Testing fetching a null diagonal matrix element"
+        );
     }
 }
 
@@ -690,10 +748,18 @@ mod lower_triangular_matrix {
     #[test]
     fn test_new() {
         let dimension: usize = 5;
-        let total_elements: usize = dimension * (dimension + 1)/2;
+        let total_elements: usize = dimension * (dimension + 1) / 2;
         let matrix: LowerTriangularMatrix<i8> = LowerTriangularMatrix::new(dimension);
-        assert_eq!(matrix.array.get_size(), total_elements, "Verifying lower triangular matrix array size");
-        assert_eq!(matrix.array.get_len(), total_elements, "Verifying lower triangular matrix array length");
+        assert_eq!(
+            matrix.array.get_size(),
+            total_elements,
+            "Verifying lower triangular matrix array size"
+        );
+        assert_eq!(
+            matrix.array.get_len(),
+            total_elements,
+            "Verifying lower triangular matrix array length"
+        );
     }
 
     #[test]
@@ -701,8 +767,14 @@ mod lower_triangular_matrix {
         let mut matrix: LowerTriangularMatrix<i8> = LowerTriangularMatrix::new(5);
         matrix.set(5, 4, 10);
         matrix.set(2, 4, 10);
-        assert_eq!(matrix.array[13], 10, "Testing a lower triangular matrix element set");
-        assert_eq!(matrix.array[3], 0, "Testing a lower triangular matrix element set");
+        assert_eq!(
+            matrix.array[13], 10,
+            "Testing a lower triangular matrix element set"
+        );
+        assert_eq!(
+            matrix.array[3], 0,
+            "Testing a lower triangular matrix element set"
+        );
     }
 
     #[test]
@@ -711,9 +783,21 @@ mod lower_triangular_matrix {
         let val: i8 = 10;
         matrix.set(1, 1, val);
         matrix.set(5, 4, val);
-        assert_eq!(matrix.get(1, 1), &val, "Testing a lower triangular matrix element fetch");
-        assert_eq!(matrix.get(5, 4), &val, "Testing a lower triangular matrix element fetch");
-        assert_eq!(matrix.get(1, 4), &0, "Testing a null lower triangular matrix element fetch");
+        assert_eq!(
+            matrix.get(1, 1),
+            &val,
+            "Testing a lower triangular matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(5, 4),
+            &val,
+            "Testing a lower triangular matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(1, 4),
+            &0,
+            "Testing a null lower triangular matrix element fetch"
+        );
     }
 }
 
@@ -724,10 +808,18 @@ mod upper_triangular_matrix {
     #[test]
     fn test_new() {
         let dimension: usize = 5;
-        let total_elements: usize = dimension * (dimension + 1)/2;
+        let total_elements: usize = dimension * (dimension + 1) / 2;
         let matrix: UpperTraingularMatrix<i8> = UpperTraingularMatrix::new(dimension);
-        assert_eq!(matrix.array.get_size(), total_elements, "Verifying upper triangular matrix array size");
-        assert_eq!(matrix.array.get_len(), total_elements, "Verifying upper triangular matrix array length");
+        assert_eq!(
+            matrix.array.get_size(),
+            total_elements,
+            "Verifying upper triangular matrix array size"
+        );
+        assert_eq!(
+            matrix.array.get_len(),
+            total_elements,
+            "Verifying upper triangular matrix array length"
+        );
     }
 
     #[test]
@@ -735,7 +827,10 @@ mod upper_triangular_matrix {
         let mut matrix: UpperTraingularMatrix<i8> = UpperTraingularMatrix::new(5);
         matrix.set(4, 5, 10);
         matrix.set(2, 4, 10);
-        assert_eq!(matrix.array[13], 10, "Testing a upper triangular matrix element set");
+        assert_eq!(
+            matrix.array[13], 10,
+            "Testing a upper triangular matrix element set"
+        );
         // assert_eq!(matrix.array[7], 0, "Testing a upper triangular matrix element set");
     }
 
@@ -745,16 +840,28 @@ mod upper_triangular_matrix {
         let val: i8 = 10;
         matrix.set(1, 1, val);
         matrix.set(4, 5, val);
-        assert_eq!(matrix.get(1, 1), &val, "Testing a upper triangular matrix element fetch");
-        assert_eq!(matrix.get(4, 5), &val, "Testing a upper triangular matrix element fetch");
-        assert_eq!(matrix.get(4, 1), &0, "Testing a null upper triangular matrix element fetch");
+        assert_eq!(
+            matrix.get(1, 1),
+            &val,
+            "Testing a upper triangular matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(4, 5),
+            &val,
+            "Testing a upper triangular matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(4, 1),
+            &0,
+            "Testing a null upper triangular matrix element fetch"
+        );
     }
 }
 
 #[cfg(test)]
 mod toeplitz_matrix {
     use crate::structs::matrices::{MatrixOperations, ToeplitzMatrix};
-    use crate::traits::Random;
+    use rand::random;
 
     #[test]
     fn test_new() {
@@ -763,8 +870,16 @@ mod toeplitz_matrix {
         // total = n + n - 1
         let total_elements: usize = 9;
         let matrix: ToeplitzMatrix<i8> = ToeplitzMatrix::new(dimension);
-        assert_eq!(matrix.array.get_size(), total_elements, "Verifying toeplitz matrix array size");
-        assert_eq!(matrix.array.get_len(), total_elements, "Verifying toeplitz matrix array length");
+        assert_eq!(
+            matrix.array.get_size(),
+            total_elements,
+            "Verifying toeplitz matrix array size"
+        );
+        assert_eq!(
+            matrix.array.get_len(),
+            total_elements,
+            "Verifying toeplitz matrix array length"
+        );
     }
 
     // #[test]
@@ -772,14 +887,22 @@ mod toeplitz_matrix {
         let mut matrix: ToeplitzMatrix<i8> = ToeplitzMatrix::new(5);
         for i in 1..6 {
             for j in 1..6 {
-                matrix.set(i, j, i8::random())
+                matrix.set(i, j, random())
             }
         }
-        assert_eq!(matrix.get(4, 3), matrix.get(3, 2), "Testing a toeplitz  matrix element set");
+        assert_eq!(
+            matrix.get(4, 3),
+            matrix.get(3, 2),
+            "Testing a toeplitz  matrix element set"
+        );
 
         // n + i - j - 1
         let test_index: usize = 5 + 4 - 3 - 1;
-        assert_eq!(matrix.get(4, 3), &matrix.array[test_index], "Testing a toeplitz  matrix element set");
+        assert_eq!(
+            matrix.get(4, 3),
+            &matrix.array[test_index],
+            "Testing a toeplitz  matrix element set"
+        );
     }
 
     // #[test]
@@ -788,9 +911,21 @@ mod toeplitz_matrix {
         let val: i8 = 10;
         matrix.set(1, 1, val);
         matrix.set(4, 5, val);
-        assert_eq!(matrix.get(1, 1), &val, "Testing a toeplitz matrix element fetch");
-        assert_eq!(matrix.get(4, 5), &val, "Testing a toeplitz matrix element fetch");
-        assert_eq!(matrix.get(4, 1), &0, "Testing a null upper triangular matrix element fetch");
+        assert_eq!(
+            matrix.get(1, 1),
+            &val,
+            "Testing a toeplitz matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(4, 5),
+            &val,
+            "Testing a toeplitz matrix element fetch"
+        );
+        assert_eq!(
+            matrix.get(4, 1),
+            &0,
+            "Testing a null upper triangular matrix element fetch"
+        );
     }
 }
 
@@ -806,8 +941,16 @@ mod sparse_matrix {
         // total = n x n / 2
         let max_nonzero_elements: usize = 12;
         let matrix: SparseMatrix<i8> = SparseMatrix::new(row, col);
-        assert_eq!(matrix.array.get_size(), max_nonzero_elements, "Invalid Sparse Matrix array size. It should be (row * col / 2)!");
-        assert_eq!(matrix.array.get_len(), 0, "Invalid Sparse Matrix array length. It should be 0!");
+        assert_eq!(
+            matrix.array.get_size(),
+            max_nonzero_elements,
+            "Invalid Sparse Matrix array size. It should be (row * col / 2)!"
+        );
+        assert_eq!(
+            matrix.array.get_len(),
+            0,
+            "Invalid Sparse Matrix array length. It should be 0!"
+        );
     }
 
     // TODO: Add set and get unit tests for Sparse Matrix
