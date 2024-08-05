@@ -1,36 +1,34 @@
 #![allow(dead_code)]
-use std::{fmt, slice};
-use std::fmt::{Debug, Display, Formatter};
 use crate::structs::arrays::{ArrayIterator, HeapArray};
+use std::fmt::{Debug, Display, Formatter};
+use std::{fmt, slice};
 
 pub struct HeapString {
-    data: HeapArray<u8>
+    data: HeapArray<u8>,
 }
 
 impl HeapString {
     pub fn new() -> HeapString {
         let mut data = HeapArray::new();
-        HeapString {
-            data
-        }
+        HeapString { data }
     }
 
     pub fn with_capacity(capacity: usize) -> HeapString {
         let mut data = HeapArray::with_capacity(capacity);
-        HeapString {
-            data
-        }
+        HeapString { data }
     }
 
-    pub fn iter(&self) -> HeapStringIterator{
+    pub fn iter(&self) -> HeapStringIterator {
         HeapStringIterator::new(self)
     }
 
     pub fn push(&mut self, character: char) -> () {
         if self.data.get_len() == self.data.get_size() {
-            self.data.resize(self.data.get_size() + 2).expect("Failed to resize the array");  // Resize to 2 more Bytes
+            self.data
+                .resize(self.data.get_size() + 2)
+                .expect("Failed to resize the array"); // Resize to 2 more Bytes
         }
-        let mut buffer= [0; 4];
+        let mut buffer = [0; 4];
         let encoded = character.encode_utf8(&mut buffer);
         for &byte in encoded.as_bytes() {
             self.data.push(byte)
@@ -84,7 +82,7 @@ impl HeapString {
     }
 
     pub fn duplicates(&self) -> HeapArray<u8> {
-        let mut map:HeapArray<usize> = HeapArray::with_capacity(128);
+        let mut map: HeapArray<usize> = HeapArray::with_capacity(128);
         for &c in &self.data {
             if (c as usize) < 128 {
                 map[c as usize] += 1;
@@ -103,7 +101,12 @@ impl HeapString {
         (1..=n).product()
     }
 
-    fn permutations_swapping(str: &mut HeapString, perm_arr: &mut HeapArray<HeapString>, l: usize, h: usize)  {
+    fn permutations_swapping(
+        str: &mut HeapString,
+        perm_arr: &mut HeapArray<HeapString>,
+        l: usize,
+        h: usize,
+    ) {
         let mut i = l;
 
         if l == h {
@@ -111,7 +114,7 @@ impl HeapString {
         } else {
             while i <= h {
                 str.data.swap(l, i);
-                Self::permutations_swapping(str, perm_arr, l+1, h);
+                Self::permutations_swapping(str, perm_arr, l + 1, h);
                 str.data.swap(l, i);
                 i += 1;
             }
@@ -120,12 +123,19 @@ impl HeapString {
 
     pub fn permutations_using_swapping(&self) -> HeapArray<HeapString> {
         let mut str_copy: HeapString = self.clone();
-        let mut perm_arr: HeapArray<HeapString> = HeapArray::with_capacity(Self::factorial(self.data.get_len()));
+        let mut perm_arr: HeapArray<HeapString> =
+            HeapArray::with_capacity(Self::factorial(self.data.get_len()));
         Self::permutations_swapping(&mut str_copy, &mut perm_arr, 0, self.data.get_len() - 1);
         perm_arr
     }
 
-    fn permutations_recursion<'a>(&self, map: &mut HeapArray<u8>, res: &'a mut HeapArray<u8>, all_res: &mut HeapArray<HeapString>, k: usize) {
+    fn permutations_recursion<'a>(
+        &self,
+        map: &mut HeapArray<u8>,
+        res: &'a mut HeapArray<u8>,
+        all_res: &mut HeapArray<HeapString>,
+        k: usize,
+    ) {
         let mut i: usize = 0;
         if k == self.data.get_len() - 1 {
             res[k] = 0;
@@ -149,8 +159,9 @@ impl HeapString {
     pub fn permutations_using_recursion(&self) -> HeapArray<HeapString> {
         let k = 0;
         let mut map: HeapArray<u8> = HeapArray::with_capacity(self.data.get_len());
-        let mut res:  HeapArray<u8> = HeapArray::with_capacity(self.data.get_len());
-        let mut all_res: HeapArray<HeapString> = HeapArray::with_capacity(Self::factorial(self.data.get_len()));
+        let mut res: HeapArray<u8> = HeapArray::with_capacity(self.data.get_len());
+        let mut all_res: HeapArray<HeapString> =
+            HeapArray::with_capacity(Self::factorial(self.data.get_len()));
         self.permutations_recursion(&mut map, &mut res, &mut all_res, k);
         all_res
     }
@@ -161,25 +172,25 @@ impl HeapString {
 
         while i != j {
             if self.data[i] != self.data[j] {
-                return false
+                return false;
             }
             i += 1;
             j -= 1;
         }
         if self.data[i] == self.data[j] {
-            return true
+            return true;
         } else {
-            return false
+            return false;
         }
     }
 
     // Time complexity is O(n)
     pub fn are_anagram(&self, other: &HeapString) -> bool {
         if self.data.get_len() != other.data.get_len() {
-            return false
+            return false;
         }
 
-        let mut map:HeapArray<i8> = HeapArray::with_capacity(128);
+        let mut map: HeapArray<i8> = HeapArray::with_capacity(128);
         for &c in &self.data {
             if (c as usize) < 128 {
                 map[c as usize] += 1;
@@ -191,7 +202,7 @@ impl HeapString {
                 map[c as usize] -= 1;
             }
             if map[c as usize] < 0 {
-                return false
+                return false;
             }
         }
         true
@@ -205,16 +216,14 @@ impl From<&str> for HeapString {
         for &byte in value.as_bytes() {
             data.push(byte);
         }
-        HeapString {
-            data
-        }
+        HeapString { data }
     }
 }
 
 impl Clone for HeapString {
     fn clone(&self) -> Self {
         Self {
-            data: self.data.clone()
+            data: self.data.clone(),
         }
     }
 }
@@ -222,18 +231,18 @@ impl Clone for HeapString {
 impl PartialEq for HeapString {
     fn eq(&self, other: &Self) -> bool {
         if self.data.get_len() != other.data.get_len() {
-            return false
+            return false;
         } else if self.data == other.data {
-            return true
+            return true;
         }
-        return false
+        return false;
     }
 
     fn ne(&self, other: &Self) -> bool {
         if self.data != other.data {
-            return true
+            return true;
         }
-        return false
+        return false;
     }
 }
 
@@ -285,23 +294,30 @@ pub struct HeapStringIterator<'a> {
 impl<'a> HeapStringIterator<'a> {
     fn new(heap_string: &'a HeapString) -> Self {
         Self {
-            array_iter: heap_string.data.iter()
+            array_iter: heap_string.data.iter(),
         }
     }
 }
 
 #[cfg(test)]
 mod heap_string {
-    use crate::structs::arrays::{HeapArray};
-    use crate::structs::strings::{HeapString};
+    use crate::structs::arrays::HeapArray;
+    use crate::structs::strings::HeapString;
 
     #[test]
     fn test_new() {
         let test_str = "Hello";
         let heap_string = HeapString::from("Hello");
-        assert_eq!(heap_string.data[0], 'H' as u8, "Testing first character in the array");
+        assert_eq!(
+            heap_string.data[0], 'H' as u8,
+            "Testing first character in the array"
+        );
         // assert_eq!(heap_string.data[heap_string.data.get_len() - 1], '\0' as u8, "Testing the last delimiter character in the array");
-        assert_eq!(heap_string.data.get_len(), test_str.len(), "Testing the array length");
+        assert_eq!(
+            heap_string.data.get_len(),
+            test_str.len(),
+            "Testing the array length"
+        );
     }
 
     #[test]
@@ -310,7 +326,11 @@ mod heap_string {
         let mut heap_string = HeapString::from(test_str);
         let current_size = heap_string.data.get_size();
         heap_string.push('!');
-        assert_eq!(heap_string.data.get_size(), current_size + 2, "Testing string array growth");
+        assert_eq!(
+            heap_string.data.get_size(),
+            current_size + 2,
+            "Testing string array growth"
+        );
     }
 
     #[test]
@@ -318,7 +338,11 @@ mod heap_string {
         let test_str = "HELLO";
         let mut heap_string = HeapString::from(test_str);
         heap_string.to_lowercase();
-        assert_eq!(heap_string.data.as_bytes(), "hello".as_bytes(), "Testing string lowercase");
+        assert_eq!(
+            heap_string.data.as_bytes(),
+            "hello".as_bytes(),
+            "Testing string lowercase"
+        );
     }
 
     #[test]
@@ -326,7 +350,11 @@ mod heap_string {
         let test_str = "hello";
         let mut heap_string = HeapString::from(test_str);
         heap_string.to_uppercase();
-        assert_eq!(heap_string.data.as_bytes(), "HELLO".as_bytes(), "Testing string uppercase");
+        assert_eq!(
+            heap_string.data.as_bytes(),
+            "HELLO".as_bytes(),
+            "Testing string uppercase"
+        );
     }
 
     #[test]
@@ -334,7 +362,11 @@ mod heap_string {
         let test_str = "hello";
         let mut heap_string = HeapString::from(test_str);
         heap_string.toggle();
-        assert_eq!(heap_string.data.as_bytes(), "HELLO".as_bytes(), "Testing string toggling");
+        assert_eq!(
+            heap_string.data.as_bytes(),
+            "HELLO".as_bytes(),
+            "Testing string toggling"
+        );
     }
 
     #[test]
@@ -342,12 +374,20 @@ mod heap_string {
         let test_str = "hello";
         let mut heap_string = HeapString::from(test_str);
         heap_string.reverse();
-        assert_eq!(heap_string.data.as_bytes(), "olleh".as_bytes(), "Testing string reverse");
+        assert_eq!(
+            heap_string.data.as_bytes(),
+            "olleh".as_bytes(),
+            "Testing string reverse"
+        );
     }
 
     fn test_duplicates() {
         let str_1 = HeapString::from("hello");
-        assert_eq!(str_1.duplicates(), HeapArray::values(&['a' as u8, 'l' as u8]), "Testing valid string duplicates");
+        assert_eq!(
+            str_1.duplicates(),
+            HeapArray::values(&['a' as u8, 'l' as u8]),
+            "Testing valid string duplicates"
+        );
     }
 
     #[test]
@@ -363,8 +403,15 @@ mod heap_string {
         ref_perm_arr.push(HeapString::from("CBA"));
 
         let gen_perm_arr = str_1.permutations_using_recursion();
-        assert_eq!(gen_perm_arr.get_len(), ref_perm_arr.get_len(), "Verifying total permutations");
-        assert_eq!(gen_perm_arr, ref_perm_arr, "Verifying string permutations using recursion");
+        assert_eq!(
+            gen_perm_arr.get_len(),
+            ref_perm_arr.get_len(),
+            "Verifying total permutations"
+        );
+        assert_eq!(
+            gen_perm_arr, ref_perm_arr,
+            "Verifying string permutations using recursion"
+        );
     }
 
     #[test]
@@ -380,16 +427,31 @@ mod heap_string {
         ref_perm_arr.push(HeapString::from("CAB"));
 
         let gen_perm_arr = str_1.permutations_using_swapping();
-        assert_eq!(gen_perm_arr.get_len(), ref_perm_arr.get_len(), "Verifying total permutations");
-        assert_eq!(gen_perm_arr, ref_perm_arr, "Verifying string permutations using swapping");
+        assert_eq!(
+            gen_perm_arr.get_len(),
+            ref_perm_arr.get_len(),
+            "Verifying total permutations"
+        );
+        assert_eq!(
+            gen_perm_arr, ref_perm_arr,
+            "Verifying string permutations using swapping"
+        );
     }
 
     #[test]
     fn test_is_palindrome() {
         let palindrome_str = HeapString::from("madam");
         let non_palindrome_str = HeapString::from("hello");
-        assert_eq!(palindrome_str.is_palindrome(), true, "Testing valid string palindrome");
-        assert_eq!(non_palindrome_str.is_palindrome(), false, "Testing invalid string palindrome");
+        assert_eq!(
+            palindrome_str.is_palindrome(),
+            true,
+            "Testing valid string palindrome"
+        );
+        assert_eq!(
+            non_palindrome_str.is_palindrome(),
+            false,
+            "Testing invalid string palindrome"
+        );
     }
 
     #[test]
@@ -397,8 +459,16 @@ mod heap_string {
         let str_1 = HeapString::from("medical");
         let str_2 = HeapString::from("decimal");
         let str_3 = HeapString::from("decider");
-        assert_eq!(str_1.are_anagram(&str_2), true, "Testing valid string anagram");
-        assert_eq!(str_1.are_anagram(&str_3), false, "Testing invalid string anagram");
+        assert_eq!(
+            str_1.are_anagram(&str_2),
+            true,
+            "Testing valid string anagram"
+        );
+        assert_eq!(
+            str_1.are_anagram(&str_3),
+            false,
+            "Testing invalid string anagram"
+        );
     }
 
     #[test]
@@ -406,8 +476,14 @@ mod heap_string {
         let str_1 = HeapString::from("same");
         let str_2 = HeapString::from("same");
         let str_3 = HeapString::from("different");
-        assert_eq!(str_1, str_2, "PartialEq trait equality implementation failed!");
-        assert_ne!(str_1, str_3, "PartialEq trait non-equality implementation failed!");
+        assert_eq!(
+            str_1, str_2,
+            "PartialEq trait equality implementation failed!"
+        );
+        assert_ne!(
+            str_1, str_3,
+            "PartialEq trait non-equality implementation failed!"
+        );
     }
 
     #[test]
@@ -421,7 +497,10 @@ mod heap_string {
     fn test_display_trait() {
         let str_1 = HeapString::from("foo");
         let display_output = format!("{}", str_1);
-        assert_eq!(display_output, "foo", "Display trait implementation failed!");
+        assert_eq!(
+            display_output, "foo",
+            "Display trait implementation failed!"
+        );
     }
 
     #[test]
@@ -436,15 +515,47 @@ mod heap_string {
         let mut string: HeapString = HeapString::from("abc");
 
         let mut iterator = string.iter();
-        assert_eq!(iterator.next().unwrap(), &('a' as u8), "The iterator did not return the expected sequence.");
-        assert_eq!(iterator.next().unwrap(), &('b' as u8), "The iterator did not return the expected sequence.");
-        assert_eq!(iterator.next().unwrap(), &('c' as u8), "The iterator did not return the expected sequence.");
-        assert_eq!(iterator.next(), None, "The iterator did not return the expected sequence.");
+        assert_eq!(
+            iterator.next().unwrap(),
+            &('a' as u8),
+            "The iterator did not return the expected sequence."
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            &('b' as u8),
+            "The iterator did not return the expected sequence."
+        );
+        assert_eq!(
+            iterator.next().unwrap(),
+            &('c' as u8),
+            "The iterator did not return the expected sequence."
+        );
+        assert_eq!(
+            iterator.next(),
+            None,
+            "The iterator did not return the expected sequence."
+        );
 
         let mut into_iterator = string.into_iter();
-        assert_eq!(into_iterator.next().unwrap(), &('a' as u8), "The into iterator impl. did not return the expected sequence.");
-        assert_eq!(into_iterator.next().unwrap(), &('b' as u8), "The into iterator impl. did not return the expected sequence.");
-        assert_eq!(into_iterator.next().unwrap(), &('c' as u8), "The into iterator impl. did not return the expected sequence.");
-        assert_eq!(into_iterator.next(), None, "The into iterator impl. did not return the expected sequence.");
+        assert_eq!(
+            into_iterator.next().unwrap(),
+            &('a' as u8),
+            "The into iterator impl. did not return the expected sequence."
+        );
+        assert_eq!(
+            into_iterator.next().unwrap(),
+            &('b' as u8),
+            "The into iterator impl. did not return the expected sequence."
+        );
+        assert_eq!(
+            into_iterator.next().unwrap(),
+            &('c' as u8),
+            "The into iterator impl. did not return the expected sequence."
+        );
+        assert_eq!(
+            into_iterator.next(),
+            None,
+            "The into iterator impl. did not return the expected sequence."
+        );
     }
 }
