@@ -1,6 +1,5 @@
 use crate::structs::arrays::HeapArray;
-use crate::structs::linked_lists::{LinkedList, Node};
-use crate::structs::smart_ptrs::AtomicReferenceCounter;
+use crate::structs::linked_lists::{NodeType, LinkedListADT, SinglyLinkedList};
 use std::ptr::NonNull;
 
 pub struct Stack<T> {
@@ -75,26 +74,23 @@ impl<T> Stack<T> {
 }
 
 pub struct DynamicStack<T> {
-    top: Option<AtomicReferenceCounter<Node<T>>>,
     length: usize,
-    data: LinkedList<T>,
+    data: SinglyLinkedList<T>,
 }
 
 impl<T> DynamicStack<T> {
     pub fn new() -> Self {
-        let ll = LinkedList::new();
+        let ll = SinglyLinkedList::new();
         Self {
-            top: None,
             length: 0,
             data: ll,
         }
     }
 
     // Time Complexity is O(1)
-    pub fn push(&mut self, data: T) {
+    pub fn push(&mut self, data: T) where T: Clone {
         self.data.push_front(data);
         self.length += 1;
-        self.top = Some(self.data.head_as_ref().unwrap().clone());
     }
 
     // Time Complexity is O(1)
@@ -107,18 +103,17 @@ impl<T> DynamicStack<T> {
         }
         let data = self.data.pop_front().unwrap();
         self.length -= 1;
-        self.top = Some(self.data.head_as_ref().unwrap().clone());
         Some(data)
     }
 
     // TODO: Use to get top value only and have separate method for get with index.
     // Time Complexity is min: O(1), max: O(n)
-    pub fn peek(&self, index: usize) -> Option<&T> {
-        Some(self.data.peek(index).expect("Index out of bounds!"))
+    pub fn peek(&self, index: usize) -> Option<&T> where T: Clone {
+        Some(self.data.peek(index))
     }
 
-    pub fn get_top(&self) -> Option<&AtomicReferenceCounter<Node<T>>> {
-        self.top.as_ref()
+    pub fn top(&self) -> Option<&NodeType<T>> {
+        self.data.head_as_ref()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -129,9 +124,6 @@ impl<T> DynamicStack<T> {
     }
 
     pub fn is_full(&self) -> bool {
-        // if self.length == self.size {
-        //     return true
-        // }
         false
     }
 }
@@ -255,12 +247,13 @@ mod stack {
 }
 
 mod dynamic_stack {
+    use crate::structs::linked_lists::LinkedListADT;
     use crate::structs::stacks::DynamicStack;
 
     #[test]
     fn test_new() {
         let stack: DynamicStack<u8> = DynamicStack::new();
-        assert_eq!(stack.top, None, "Stack top pointer is invalid!");
+        assert_eq!(stack.top(), None, "Stack top pointer is invalid!");
         assert_eq!(stack.length, 0, "Stack length is invalid!");
         assert_eq!(
             format!("{}", stack.data),
@@ -273,17 +266,13 @@ mod dynamic_stack {
     fn test_push() {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
-        assert_eq!(
-            stack.top,
-            Some(stack.data.head_as_ref().unwrap().clone()),
-            "Stack top pointer is invalid!"
-        );
         assert_eq!(stack.length, 1, "Stack length is invalid!");
         assert_eq!(
             format!("{}", stack.data),
             "1".to_string(),
             "Stack array is invalid!"
         );
+        stack.push(2);
     }
 
     #[test]
@@ -293,11 +282,6 @@ mod dynamic_stack {
         stack.push(1);
         stack.push(2);
         assert_eq!(stack.pop(), Some(2), "Stack pop value is invalid!");
-        assert_eq!(
-            stack.top,
-            Some(stack.data.head_as_ref().unwrap().clone()),
-            "Stack top pointer is invalid!"
-        );
         assert_eq!(stack.length, 1, "Stack length is invalid!");
         assert_eq!(
             format!("{}", stack.data),
@@ -324,12 +308,12 @@ mod dynamic_stack {
     }
 
     #[test]
-    fn test_get_top() {
+    fn test_top() {
         let mut stack: DynamicStack<u8> = DynamicStack::new();
         stack.push(1);
         stack.push(2);
         assert_eq!(
-            stack.get_top(),
+            stack.top(),
             stack.data.head_as_ref(),
             "Stack top pointer is invalid!"
         );
