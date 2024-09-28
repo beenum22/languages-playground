@@ -107,6 +107,10 @@ impl<T> AtomicReferenceState<T> {
     fn count(&self) -> usize {
         unsafe { (*self.count.get()).load(Ordering::SeqCst) }
     }
+
+    fn as_ptr(&self) -> *const T {
+        &self.value as *const T
+    }
 }
 
 impl<T: Clone> Clone for AtomicReferenceState<T> {
@@ -145,6 +149,10 @@ impl<T> AtomicReferenceCounter<T> {
 
     pub fn as_ptr(&self) -> *mut AtomicReferenceState<T> {
         self.ptr.as_ptr()
+    }
+
+    pub fn as_val_ptr(&self) -> *const T {
+        unsafe {self.ptr.as_ref().as_ptr()}
     }
 
     pub fn count(&self) -> usize {
