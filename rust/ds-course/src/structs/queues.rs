@@ -47,11 +47,10 @@ pub struct BasicQueue<T> {
 
 impl<T> BasicQueue<T> {
     pub fn new(size: usize) -> Self {
-        let mut arr: HeapArray<T> = HeapArray::with_capacity(size);
         Self {
             length: 0,
             size,
-            data: arr,
+            data: HeapArray::with_capacity(size),
         }
     }
 }
@@ -102,13 +101,12 @@ pub struct EphemeralQueue<T> {
 
 impl<T> EphemeralQueue<T> {
     pub fn new(size: usize) -> Self {
-        let mut arr: HeapArray<T> = HeapArray::with_capacity(size);
         Self {
             front: 0,
             rear: 0,
             length: 0,
             size,
-            data: arr,
+            data: HeapArray::with_capacity(size),
         }
     }
 }
@@ -161,13 +159,12 @@ pub struct CircularQueue<T> {
 
 impl<T> CircularQueue<T> {
     pub fn new(size: usize) -> Self {
-        let mut arr: HeapArray<T> = HeapArray::with_capacity(size);
         Self {
             front: 0,
             rear: 0,
             length: 0,
             size,
-            data: arr,
+            data: HeapArray::with_capacity(size),
         }
     }
 }
