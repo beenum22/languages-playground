@@ -572,43 +572,50 @@ impl<T> DoublyLinkedList<T> {
         self.length += 1;
     }
 
+    // TODO: Fix the logic
     // Time Complexity is O(n)
     pub fn delete(&mut self, index: usize) -> ()
     where
         T: Clone + Debug
     {
+        unimplemented!();
         if index >= self.length {
             panic!("Index out of bounds!");
         }
 
-        let mut head_clone = self.head.clone();
-        let mut current = head_clone.as_mut().unwrap();
+        // let mut head_clone = self.head.clone();
+        // let mut current = head_clone.as_mut().unwrap();
         let mut i: usize = 0;
 
+        let mut current = self.head_as_mut().unwrap().clone();
+        let mut current_for_next = self.head_as_mut().unwrap().clone();
+
         while i != index {
-            current = current.next_as_mut().unwrap();
+            current = current.next().clone().unwrap();
             i += 1
         }
 
-        let mut next_node = current.clone().next().take();
-        let mut previous_node = current.clone().previous().take();
+        let mut next_node = current.next().clone();
+        let mut previous_node = current.previous().clone();
 
         if current.previous_as_ref().is_some() {
-            current.previous_as_mut().unwrap().set_next(next_node.clone());
-        }
-        if current.next_as_ref().is_some() {
-            current.next_as_mut().unwrap().set_previous(previous_node.clone());
-        }
-
-        if previous_node.is_none() {
+            // previous_node.unwrap().set_next(Some(next_node.unwrap().clone()));
+            previous_node.unwrap().set_next(current.next().clone());
+        } else {
             self.head = next_node.clone();
             self.head_as_mut().unwrap().set_previous(None);
         }
 
-        if next_node.is_none() {
-            self.tail = previous_node.clone();
-            self.tail_as_mut().unwrap().set_next(None);
-        }
+        let mut next_node_n = current_for_next.next().clone();
+        let mut previous_node_n = current_for_next.previous().clone();
+
+        print!("{:?}", previous_node_n.unwrap());
+        // if current_for_next.next_as_ref().is_some() {
+        //     next_node_n.unwrap().set_previous(current_for_next.previous().clone());
+        // } else {
+        //     self.tail = previous_node_n.clone();
+        //     self.tail_as_mut().unwrap().set_next(None);
+        // }
         self.length -= 1;
     }
 }
@@ -627,6 +634,16 @@ impl<T: Display + Clone> Display for DoublyLinkedList<T> {
             }
         }
         Ok(())
+    }
+}
+
+impl<T: Debug + Clone> Debug for DoublyLinkedList<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Doubly Linked List")
+            .field("head", &self.head)
+            .field("tail", &self.tail)
+            .field("length", &self.length)
+            .finish()
     }
 }
 
@@ -1687,6 +1704,13 @@ mod doubly_linked_list {
     }
 
     #[test]
+    #[should_panic(expected = "Index out of bounds!")]
+    fn test_delete_panic() {
+        let mut ll: DoublyLinkedList<u8> = DoublyLinkedList::new();
+        ll.delete(5);
+    }
+
+    #[test]
     fn test_delete() {
         let mut ll: DoublyLinkedList<u8> = DoublyLinkedList::new();
         // ll.push_front(5);
@@ -1694,7 +1718,6 @@ mod doubly_linked_list {
         ll.push_front(15);
         ll.push_front(20);
         ll.push_front(25);
-
         ll.delete(0);
         assert_eq!(ll.length, 3, "Linked List has invalid length after delete!");
         assert_eq!(
@@ -1722,13 +1745,29 @@ mod doubly_linked_list {
             &15,
             "Doubly Linked List new head must have next node here!"
         );
-        println!("{}", ll);
+        assert_eq!(
+            ll.head_as_ref().unwrap().next_as_ref().unwrap().previous_as_ref().unwrap().data_as_ref(),
+            &20,
+            "Doubly Linked List new head next has an invalid previous node!"
+        );
+        println!("{:?}", ll);
         ll.delete(1);
+        println!("{:?}", ll);
         assert_eq!(ll.length, 2, "Linked List has invalid length after delete!");
         assert_eq!(
             ll.head_as_ref().unwrap().data_as_ref(),
             &20,
             "Doubly Linked List must have the same head delete!"
+        );
+        assert_eq!(
+            ll.head_as_ref().unwrap().previous_as_ref().is_none(),
+            true,
+            "Doubly Linked List Head must not have a previous Node!"
+        );
+        assert_eq!(
+            ll.head_as_ref().unwrap().next_as_ref().unwrap().data_as_ref(),
+            &10,
+            "Doubly Linked List Head has invalid next node!"
         );
         println!("{}", ll);
         assert_eq!(
