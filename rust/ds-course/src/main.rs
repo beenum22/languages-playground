@@ -13,6 +13,7 @@ mod structs {
     pub mod stacks;
     pub mod strings;
     pub mod tokens;
+    pub mod trees;
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
